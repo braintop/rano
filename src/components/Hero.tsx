@@ -75,14 +75,24 @@ export const Hero = () => {
                 variant="gold"
                 size="xl"
                 asChild
-                className="relative shadow-[0_0_28px_rgba(228,0,43,0.45)] hover:shadow-[0_0_40px_rgba(228,0,43,0.55)]"
+                className="relative"
               >
                 <motion.a
                   href="https://smart.fnx.co.il/Travel/landing.html?id=1XQQswJ%20GT8%3D"
                   target="_blank"
                   rel="noopener noreferrer"
-                  animate={{ scale: [1, 1.05, 1], opacity: [1, 0.92, 1] }}
-                  transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
+                  animate={{
+                    scale: [1, 1.04, 1],
+                    backgroundColor: ['#E4002B', '#FFFFFF', '#111827', '#E4002B'],
+                    color: ['#FFFFFF', '#111827', '#FFFFFF', '#FFFFFF'],
+                    boxShadow: [
+                      '0 0 28px rgba(228,0,43,0.55)',
+                      '0 0 22px rgba(255,255,255,0.45)',
+                      '0 0 24px rgba(17,24,39,0.55)',
+                      '0 0 28px rgba(228,0,43,0.55)',
+                    ],
+                  }}
+                  transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
                 >
                   {isHebrew ? 'לקבלת הצעה ביטוח נסיעות לחו״ל' : 'Travel insurance quote'}
                 </motion.a>
