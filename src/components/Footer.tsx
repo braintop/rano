@@ -1,4 +1,5 @@
 import { Linkedin, Facebook, Twitter } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 
 const socialLinks = [
@@ -19,7 +20,7 @@ export const Footer = () => {
             <p className="font-serif text-2xl font-bold mb-2">
               {isHebrew ? (
                 <>
-                  רן <span className="text-gold">ויינשטוק</span>
+                  רן <span className="text-gold">וינשטוק</span>
                 </>
               ) : (
                 <>
@@ -49,9 +50,25 @@ export const Footer = () => {
         </div>
 
         <div className="border-t border-primary-foreground/10 mt-8 pt-8 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-4 text-sm">
+            <Link
+              to="/accessibility"
+              className="text-primary-foreground/60 hover:text-gold transition-colors underline underline-offset-4"
+            >
+              {isHebrew ? 'הצהרת נגישות' : 'Accessibility'}
+            </Link>
+            <span className="text-primary-foreground/20">|</span>
+            <Link
+              to="/privacy"
+              className="text-primary-foreground/60 hover:text-gold transition-colors underline underline-offset-4"
+            >
+              {isHebrew ? 'מדיניות פרטיות' : 'Privacy policy'}
+            </Link>
+          </div>
+
           <p className="text-primary-foreground/40 text-sm">
             {isHebrew
-              ? `© ${new Date().getFullYear()} רן ויינשטוק. כל הזכויות שמורות.`
+              ? `© ${new Date().getFullYear()} רן וינשטוק. כל הזכויות שמורות.`
               : `© ${new Date().getFullYear()} Ran Weinstock. All rights reserved.`}
           </p>
           <p className="text-primary-foreground/40 text-sm mt-2">

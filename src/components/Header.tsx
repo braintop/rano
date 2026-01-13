@@ -53,7 +53,7 @@ export const Header = () => {
           <a href="#" className="font-serif text-2xl font-bold text-primary">
             {isHebrew ? (
               <>
-                רן <span className="text-gold">ויינשטוק</span>
+                רן <span className="text-gold">וינשטוק</span>
               </>
             ) : (
               <>
