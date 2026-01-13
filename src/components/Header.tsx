@@ -50,17 +50,8 @@ export const Header = () => {
           className="flex items-center justify-between h-20 gap-4"
           dir={isHebrew ? 'rtl' : 'ltr'}
         >
-          <a href="#" className="font-serif text-2xl font-bold text-primary">
-            {isHebrew ? (
-              <>
-                רן <span className="text-gold">וינשטוק</span>
-              </>
-            ) : (
-              <>
-                Ran <span className="text-gold">Weinstock</span>
-              </>
-            )}
-          </a>
+          {/* Keep space for layout, but hide the name */}
+          <a href="#" className="block min-w-[180px]" aria-label={isHebrew ? 'דף הבית' : 'Home'} />
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
