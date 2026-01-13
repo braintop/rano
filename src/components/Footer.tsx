@@ -54,6 +54,17 @@ export const Footer = () => {
               ? `© ${new Date().getFullYear()} רן ויינשטוק. כל הזכויות שמורות.`
               : `© ${new Date().getFullYear()} Ran Weinstock. All rights reserved.`}
           </p>
+          <p className="text-primary-foreground/40 text-sm mt-2">
+            {isHebrew ? 'נבנה על ידי ' : 'Built by '}
+            <a
+              href="https://braintop.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-4 hover:text-gold transition-colors"
+            >
+              braintop.ai
+            </a>
+          </p>
         </div>
       </div>
     </footer>
