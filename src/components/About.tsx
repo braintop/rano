@@ -4,7 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 
 const heContent = {
   stats: [
-    { number: '18+', label: 'שנות ניסיון' },
+    { number: '20+', label: 'שנות ניסיון' },
     { number: '80+', label: 'מדינות שביקר' },
     { number: '6', label: 'מאמרים שפורסמו' },
     { number: '42.2', label: 'קילומטר מרתון' },
@@ -36,14 +36,14 @@ const heContent = {
   subTitleHighlight: 'רן',
   paragraphs: [
     'רן וינשטוק הוא סמנכ״ל בכיר באיאון ישראל, חלק מ-Aon plc - חברת הברוקרים הגדולה בעולם בתחום ניהול סיכונים, ביטוח וביטוח משנה. לפני כן כיהן כסמנכ״ל ב-Marsh Israel.',
-    'עם יותר מ-18 שנות ניסיון בפיתוח עסקי במחלקת סיכונים מיוחדים, מתמחה במתן פתרונות ביטוח וניהול סיכונים לתעשיית ההיי-טק, הביו-טק והסייבר הישראלית.',
+    'עם יותר מ-20 שנות ניסיון בפיתוח עסקי במחלקת סיכונים מיוחדים, מתמחה במתן פתרונות ביטוח וניהול סיכונים לתעשיית ההיי-טק, הביו-טק והסייבר הישראלית.',
     'בוגר תוכנית היזמות TMBA של מיקרוסופט ישראל ותוכנית להב לחדשנות טכנולוגית בתחום הבריאות. שימש כחבר דירקטוריון בחברות הזנק וכיועץ לסטארט-אפים.',
   ],
 };
 
 const enContent = {
   stats: [
-    { number: '18+', label: 'Years of experience' },
+    { number: '20+', label: 'Years of experience' },
     { number: '80+', label: 'Countries visited' },
     { number: '6', label: 'Published articles' },
     { number: '42.2', label: 'Marathon kilometers' },
@@ -77,7 +77,7 @@ const enContent = {
   subTitleHighlight: 'Ran',
   paragraphs: [
     'Ran Weinstock is a Senior Vice President at AON Israel, part of Aon plc – the world’s largest broker in risk management, insurance and reinsurance. Previously, he served as a Vice President at Marsh Israel.',
-    'With over 18 years of experience in business development within the special risks division, he specializes in providing insurance and risk management solutions for Israel’s high-tech, biotech and cyber industries.',
+    'With over 20 years of experience in business development within the special risks division, he specializes in providing insurance and risk management solutions for Israel’s high-tech, biotech and cyber industries.',
     'Graduate of Microsoft Israel’s TMBA entrepreneurship program and the Lahav program for technological innovation in healthcare. He has served as a board member in start-ups and as an advisor to early-stage companies.',
   ],
 };

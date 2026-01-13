@@ -6,55 +6,59 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 30% 15%;
+    /* AON-like palette: light surfaces + red accent + dark footer */
+    --background: 0 0% 100%;
+    --foreground: 225 15% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 15%;
+    --card-foreground: 225 15% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 15%;
+    --popover-foreground: 225 15% 15%;
 
-    --primary: 220 60% 20%;
+    --primary: 225 15% 15%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 15% 94%;
-    --secondary-foreground: 220 30% 15%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 225 15% 15%;
 
-    --muted: 220 15% 94%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 225 8% 45%;
 
-    --accent: 38 92% 50%;
-    --accent-foreground: 220 60% 15%;
+    /* AON red approx: #E4002B */
+    --accent: 349 100% 45%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 20% 88%;
-    --input: 220 20% 88%;
-    --ring: 220 60% 20%;
+    --border: 220 12% 90%;
+    --input: 220 12% 90%;
+    --ring: 349 100% 45%;
 
     --radius: 0.5rem;
 
     /* Custom design tokens */
-    --navy: 220 60% 20%;
-    --navy-light: 220 50% 30%;
-    --navy-dark: 220 70% 12%;
-    --gold: 38 92% 50%;
-    --gold-light: 38 85% 65%;
-    --gold-dark: 38 90% 40%;
-    --cream: 40 30% 96%;
+    /* Keep existing naming but map "gold" to AON red for minimal refactors */
+    --navy: 225 12% 18%;
+    --navy-light: 225 12% 24%;
+    --navy-dark: 225 14% 12%;
+    --gold: 349 100% 45%;
+    --gold-light: 349 100% 55%;
+    --gold-dark: 349 85% 38%;
+    --cream: 0 0% 100%;
 
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(220 60% 20%) 0%, hsl(220 70% 12%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(38 90% 40%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 15% 98%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(220 18% 96%) 100%);
+    --gradient-footer: linear-gradient(135deg, hsl(225 12% 18%) 0%, hsl(225 14% 12%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(349 100% 45%) 0%, hsl(349 85% 38%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 18% 98%) 100%);
 
     /* Shadows */
-    --shadow-sm: 0 2px 8px hsl(220 60% 20% / 0.06);
-    --shadow-md: 0 4px 20px hsl(220 60% 20% / 0.1);
-    --shadow-lg: 0 8px 40px hsl(220 60% 20% / 0.15);
-    --shadow-gold: 0 4px 20px hsl(38 92% 50% / 0.3);
+    --shadow-sm: 0 2px 8px hsl(225 15% 15% / 0.06);
+    --shadow-md: 0 4px 20px hsl(225 15% 15% / 0.1);
+    --shadow-lg: 0 8px 40px hsl(225 15% 15% / 0.14);
+    --shadow-gold: 0 4px 20px hsl(349 100% 45% / 0.22);
   }
 
   .dark {
@@ -120,6 +124,12 @@
   }
 
   .bg-navy-gradient {
+    /* Used for darker sections (footer / AON section) */
+    background: var(--gradient-footer);
+  }
+
+  .bg-hero-gradient {
+    /* Used for hero: light like AON */
     background: var(--gradient-hero);
   }
 

@@ -66,15 +66,26 @@ export const Hero = () => {
 
             <p className="text-lg text-primary-foreground/60 mb-8 max-w-md leading-relaxed">
               {isHebrew
-                ? 'יותר מ-18 שנות ניסיון בפיתוח עסקי, ניהול סיכונים וביטוח סייבר עבור חברות היי-טק, ביו-טק וסטארט-אפים בישראל'
-                : 'Over 18 years of experience in business development, risk management and cyber insurance for high-tech, biotech and start-up companies in Israel.'}
+                ? 'יותר מ-20 שנות ניסיון בפיתוח עסקי, ניהול סיכונים וביטוח סייבר עבור חברות היי-טק, ביו-טק וסטארט-אפים בישראל'
+                : 'Over 20 years of experience in business development, risk management and cyber insurance for high-tech, biotech and start-up companies in Israel.'}
             </p>
 
             <div className="flex flex-wrap gap-4 mb-10">
-              <Button variant="gold" size="xl" asChild>
-                <a href="#contact">
-                  {isHebrew ? 'צור קשר' : 'Contact'}
-                </a>
+              <Button
+                variant="gold"
+                size="xl"
+                asChild
+                className="relative shadow-[0_0_28px_rgba(228,0,43,0.45)] hover:shadow-[0_0_40px_rgba(228,0,43,0.55)]"
+              >
+                <motion.a
+                  href="https://smart.fnx.co.il/Travel/landing.html?id=1XQQswJ%20GT8%3D"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  animate={{ scale: [1, 1.05, 1], opacity: [1, 0.92, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
+                >
+                  {isHebrew ? 'לקבלת הצעה ביטוח נסיעות לחו״ל' : 'Travel insurance quote'}
+                </motion.a>
               </Button>
               <Button variant="heroOutline" size="xl" asChild>
                 <a href="#about">
@@ -108,40 +119,17 @@ export const Hero = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="relative"
           >
-            <div className="flex flex-col items-center gap-6">
-              {/* Subtle CTA (above image) */}
-              <div
-                className={`w-full max-w-md rounded-xl border border-primary-foreground/15 bg-primary-foreground/5 p-5 backdrop-blur-sm ${
-                  isHebrew ? 'text-right border-r-4 border-r-gold/60' : 'text-left border-l-4 border-l-gold/60'
-                }`}
-              >
-                <p className="text-primary-foreground/80 font-medium mb-3">
-                  {isHebrew ? 'רוצה לקבל הצעה?' : 'Want a quote?'}
-                </p>
-                <ul className="space-y-1.5 text-primary-foreground/70">
-                  <li>{isHebrew ? 'ביטוח דירקטורים?' : 'D&O insurance quote?'}</li>
-                  <li>{isHebrew ? 'ביטוח נסיעות לחו"ל?' : 'Travel insurance?'}</li>
-                  <li>{isHebrew ? 'ביטוח אחריות מקצועית / מוצר הייטק?' : 'Professional liability / tech product insurance?'}</li>
-                </ul>
-                <div className="mt-4">
-                  <Button variant="heroOutline" size="sm" asChild>
-                    <a href="#contact">{isHebrew ? 'לחצו להשארת פרטים' : 'Go to contact'}</a>
-                  </Button>
-                </div>
-              </div>
+            <div className="relative w-72 h-72 lg:w-80 lg:h-80 mx-auto">
+              {/* Gold accent ring */}
+              <div className="absolute -inset-4 rounded-full border-2 border-gold/30" />
+              <div className="absolute -inset-8 rounded-full border border-gold/10" />
 
-              <div className="relative w-72 h-72 lg:w-80 lg:h-80 mx-auto">
-                {/* Gold accent ring */}
-                <div className="absolute -inset-4 rounded-full border-2 border-gold/30" />
-                <div className="absolute -inset-8 rounded-full border border-gold/10" />
-
-                <div className="w-full h-full rounded-full overflow-hidden border-4 border-gold shadow-2xl">
-                  <img
-                    src="/ran.png"
-                    alt="רן וינשטוק"
-                    className="w-full h-full object-cover object-top"
-                  />
-                </div>
+              <div className="w-full h-full rounded-full overflow-hidden border-4 border-gold shadow-2xl">
+                <img
+                  src="/ran.png"
+                  alt="רן וינשטוק"
+                  className="w-full h-full object-cover object-top"
+                />
               </div>
             </div>
           </motion.div>
