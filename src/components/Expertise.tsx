@@ -1,43 +1,99 @@
 import { motion } from 'framer-motion';
 import { Shield, Laptop, Building, Users, Scale, Plane } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
-const expertiseAreas = [
-  {
-    icon: Shield,
-    title: 'ביטוח סייבר',
-    description: 'פתרונות ביטוח מקיפים להגנה מפני איומי סייבר ופריצות מידע',
-  },
-  {
-    icon: Building,
-    title: 'D&O - חבות דירקטורים',
-    description: 'ביטוח אחריות דירקטורים ונושאי משרה בחברות ציבוריות ופרטיות',
-  },
-  {
-    icon: Laptop,
-    title: 'היי-טק וסטארט-אפים',
-    description: 'פתרונות ביטוח ייחודיים לחברות טכנולוגיה וסטארט-אפים',
-  },
-  {
-    icon: Users,
-    title: 'ביו-טק ומכשור רפואי',
-    description: 'ניהול סיכונים מקיף לתעשיית הביו-טכנולוגיה והמכשור הרפואי',
-  },
-  {
-    icon: Scale,
-    title: 'ייעוץ משפטי-ביטוחי',
-    description: 'שילוב מומחיות משפטית עם ידע ביטוחי מעמיק',
-  },
-  {
-    icon: Plane,
-    title: 'פעילות בינלאומית',
-    description: 'ליווי חברות ישראליות בפעילות גלובלית וניהול סיכונים בינלאומי',
-  },
-];
+const heContent = {
+  title: 'תחומי',
+  highlight: 'התמחות',
+  description: 'מומחיות רב-תחומית בניהול סיכונים ופתרונות ביטוח מתקדמים',
+  expertiseAreas: [
+    {
+      icon: Shield,
+      title: 'ביטוח סייבר',
+      description: 'פתרונות ביטוח מקיפים להגנה מפני איומי סייבר ופריצות מידע',
+    },
+    {
+      icon: Building,
+      title: 'D&O - חבות דירקטורים',
+      description: 'ביטוח אחריות דירקטורים ונושאי משרה בחברות ציבוריות ופרטיות',
+    },
+    {
+      icon: Laptop,
+      title: 'היי-טק וסטארט-אפים',
+      description: 'פתרונות ביטוח ייחודיים לחברות טכנולוגיה וסטארט-אפים',
+    },
+    {
+      icon: Users,
+      title: 'ביו-טק ומכשור רפואי',
+      description: 'ניהול סיכונים מקיף לתעשיית הביו-טכנולוגיה והמכשור הרפואי',
+    },
+    {
+      icon: Scale,
+      title: 'ייעוץ משפטי-ביטוחי',
+      description: 'שילוב מומחיות משפטית עם ידע ביטוחי מעמיק',
+    },
+    {
+      icon: Plane,
+      title: 'פעילות בינלאומית',
+      description:
+        'ליווי חברות ישראליות בפעילות גלובלית וניהול סיכונים בינלאומי',
+    },
+  ],
+};
+
+const enContent = {
+  title: 'Areas of',
+  highlight: 'Expertise',
+  description:
+    'Multi-disciplinary expertise in risk management and advanced insurance solutions.',
+  expertiseAreas: [
+    {
+      icon: Shield,
+      title: 'Cyber Insurance',
+      description:
+        'Comprehensive insurance solutions to protect against cyber threats and data breaches.',
+    },
+    {
+      icon: Building,
+      title: 'D&O Liability',
+      description:
+        'Directors and Officers liability coverage for public and private companies.',
+    },
+    {
+      icon: Laptop,
+      title: 'High-Tech & Startups',
+      description:
+        'Tailored insurance programs for technology companies and startups.',
+    },
+    {
+      icon: Users,
+      title: 'Biotech & Medical Devices',
+      description:
+        'End-to-end risk management for the biotech and medical device industries.',
+    },
+    {
+      icon: Scale,
+      title: 'Legal & Insurance Advisory',
+      description:
+        'Combining legal expertise with deep insurance knowledge for better decision-making.',
+    },
+    {
+      icon: Plane,
+      title: 'International Operations',
+      description:
+        'Supporting Israeli companies in global expansion and international risk management.',
+    },
+  ],
+};
 
 export const Expertise = () => {
+  const { language } = useLanguage();
+  const isHebrew = language === 'he';
+  const content = isHebrew ? heContent : enContent;
+
   return (
     <section id="expertise" className="section-padding bg-secondary/30">
-      <div className="container-narrow" dir="rtl">
+      <div className="container-narrow" dir={isHebrew ? 'rtl' : 'ltr'}>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -46,16 +102,16 @@ export const Expertise = () => {
           className="text-center mb-16"
         >
           <h2 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4">
-            תחומי <span className="text-gold">התמחות</span>
+            {content.title} <span className="text-gold">{content.highlight}</span>
           </h2>
           <div className="w-24 h-1 bg-gold mx-auto rounded-full mb-6" />
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            מומחיות רב-תחומית בניהול סיכונים ופתרונות ביטוח מתקדמים
+            {content.description}
           </p>
         </motion.div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {expertiseAreas.map((area, index) => (
+          {content.expertiseAreas.map((area, index) => (
             <motion.div
               key={area.title}
               initial={{ opacity: 0, y: 30 }}

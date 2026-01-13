@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Linkedin, Facebook, Twitter, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
-import ranProfile from '@/assets/ran-profile.jpg';
+import { useLanguage } from '@/context/LanguageContext';
 
 const socialLinks = [
   { icon: Linkedin, href: 'https://www.linkedin.com/in/ranweinstock/', label: 'LinkedIn' },
@@ -10,6 +10,9 @@ const socialLinks = [
 ];
 
 export const Hero = () => {
+  const { language } = useLanguage();
+  const isHebrew = language === 'he';
+
   return (
     <section className="relative min-h-screen bg-navy-gradient overflow-hidden">
       {/* Background Pattern */}
@@ -21,13 +24,16 @@ export const Hero = () => {
       </div>
 
       <div className="container-narrow relative z-10 min-h-screen flex items-center">
-        <div className="grid lg:grid-cols-2 gap-12 items-center w-full py-32" dir="rtl">
+        <div
+          className="grid lg:grid-cols-2 gap-12 items-center w-full py-32"
+          dir={isHebrew ? 'rtl' : 'ltr'}
+        >
           {/* Content */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-right"
+            className={isHebrew ? 'text-right' : 'text-left'}
           >
             <motion.p
               initial={{ opacity: 0 }}
@@ -37,28 +43,43 @@ export const Hero = () => {
             >
               Senior Vice President
             </motion.p>
-            
+
             <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold text-primary-foreground mb-6 leading-tight">
-              רן
-              <br />
-              <span className="text-gold">ויינשטוק</span>
+              {isHebrew ? (
+                <>
+                  רן
+                  <br />
+                  <span className="text-gold">ויינשטוק</span>
+                </>
+              ) : (
+                <>
+                  Ran
+                  <br />
+                  <span className="text-gold">Weinstock</span>
+                </>
+              )}
             </h1>
-            
+
             <p className="text-xl text-primary-foreground/80 mb-4 font-medium">
-              סמנכ״ל בכיר | AON Israel
+              {isHebrew ? 'סמנכ״ל בכיר | AON Israel' : 'Senior Vice President | AON Israel'}
             </p>
-            
+
             <p className="text-lg text-primary-foreground/60 mb-8 max-w-md leading-relaxed">
-              יותר מ-18 שנות ניסיון בפיתוח עסקי, ניהול סיכונים וביטוח סייבר
-              עבור חברות היי-טק, ביו-טק וסטארט-אפים בישראל
+              {isHebrew
+                ? 'יותר מ-18 שנות ניסיון בפיתוח עסקי, ניהול סיכונים וביטוח סייבר עבור חברות היי-טק, ביו-טק וסטארט-אפים בישראל'
+                : 'Over 18 years of experience in business development, risk management and cyber insurance for high-tech, biotech and start-up companies in Israel.'}
             </p>
 
             <div className="flex flex-wrap gap-4 mb-10">
               <Button variant="gold" size="xl" asChild>
-                <a href="#contact">צור קשר</a>
+                <a href="#contact">
+                  {isHebrew ? 'צור קשר' : 'Contact'}
+                </a>
               </Button>
               <Button variant="heroOutline" size="xl" asChild>
-                <a href="#about">קרא עוד</a>
+                <a href="#about">
+                  {isHebrew ? 'קרא עוד' : 'Read more'}
+                </a>
               </Button>
             </div>
 
@@ -94,9 +115,9 @@ export const Hero = () => {
               
               <div className="w-full h-full rounded-full overflow-hidden border-4 border-gold shadow-2xl">
                 <img
-                  src={ranProfile}
+                  src="/ran.png"
                   alt="רן ויינשטוק"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-top"
                 />
               </div>
             </div>

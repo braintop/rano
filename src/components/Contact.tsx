@@ -5,8 +5,12 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
 
 export const Contact = () => {
+  const { language } = useLanguage();
+  const isHebrew = language === 'he';
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -23,7 +27,11 @@ export const Contact = () => {
     // Simulate form submission
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    toast.success('ההודעה נשלחה בהצלחה! אחזור אליך בהקדם.');
+    toast.success(
+      isHebrew
+        ? 'ההודעה נשלחה בהצלחה! אחזור אליך בהקדם.'
+        : 'Your message was sent successfully. I will get back to you soon.',
+    );
     setFormData({ name: '', email: '', phone: '', company: '', message: '' });
     setIsSubmitting(false);
   };
@@ -34,7 +42,7 @@ export const Contact = () => {
 
   return (
     <section id="contact" className="section-padding bg-background">
-      <div className="container-narrow" dir="rtl">
+      <div className="container-narrow" dir={isHebrew ? 'rtl' : 'ltr'}>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -43,11 +51,16 @@ export const Contact = () => {
           className="text-center mb-16"
         >
           <h2 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4">
-            בואו <span className="text-gold">נדבר</span>
+            {isHebrew ? 'בואו' : "Let's"}{' '}
+            <span className="text-gold">
+              {isHebrew ? 'נדבר' : 'talk'}
+            </span>
           </h2>
           <div className="w-24 h-1 bg-gold mx-auto rounded-full mb-6" />
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            מעוניין לשמוע עוד על פתרונות ביטוח וניהול סיכונים? צור קשר ונקבע פגישה
+            {isHebrew
+              ? 'מעוניין לשמוע עוד על פתרונות ביטוח וניהול סיכונים? צור קשר ונקבע פגישה'
+              : 'Interested in hearing more about insurance and risk management solutions? Reach out and we will schedule a meeting.'}
           </p>
         </motion.div>
 
@@ -61,7 +74,9 @@ export const Contact = () => {
             className="lg:col-span-2 space-y-6"
           >
             <div className="card-elevated rounded-xl p-6">
-              <h3 className="font-serif text-2xl font-semibold mb-6">פרטי התקשרות</h3>
+              <h3 className="font-serif text-2xl font-semibold mb-6">
+                {isHebrew ? 'פרטי התקשרות' : 'Contact details'}
+              </h3>
               
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
@@ -69,8 +84,12 @@ export const Contact = () => {
                     <MapPin className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">כתובת</p>
-                    <p className="font-medium">AON Israel, תל אביב</p>
+                    <p className="text-sm text-muted-foreground">
+                      {isHebrew ? 'כתובת' : 'Address'}
+                    </p>
+                    <p className="font-medium">
+                      {isHebrew ? 'AON Israel, תל אביב' : 'AON Israel, Tel Aviv'}
+                    </p>
                   </div>
                 </div>
 
@@ -92,9 +111,14 @@ export const Contact = () => {
             </div>
 
             <div className="card-elevated rounded-xl p-6">
-              <h4 className="font-serif text-lg font-semibold mb-3">תחומי התמחות</h4>
+              <h4 className="font-serif text-lg font-semibold mb-3">
+                {isHebrew ? 'תחומי התמחות' : 'Areas of expertise'}
+              </h4>
               <div className="flex flex-wrap gap-2">
-                {['ביטוח סייבר', 'D&O', 'היי-טק', 'ביו-טק', 'ניהול סיכונים', 'סטארט-אפים'].map((tag) => (
+                {(isHebrew
+                  ? ['ביטוח סייבר', 'D&O', 'היי-טק', 'ביו-טק', 'ניהול סיכונים', 'סטארט-אפים']
+                  : ['Cyber Insurance', 'D&O', 'High-tech', 'Biotech', 'Risk Management', 'Startups']
+                ).map((tag) => (
                   <span
                     key={tag}
                     className="px-3 py-1 bg-gold/10 text-gold rounded-full text-sm font-medium"
@@ -118,7 +142,7 @@ export const Contact = () => {
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium mb-2">
-                    שם מלא *
+                    {isHebrew ? 'שם מלא *' : 'Full name *'}
                   </label>
                   <Input
                     id="name"
@@ -126,13 +150,13 @@ export const Contact = () => {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    placeholder="השם שלך"
-                    className="text-right"
+                    placeholder={isHebrew ? 'השם שלך' : 'Your name'}
+                    className={isHebrew ? 'text-right' : 'text-left'}
                   />
                 </div>
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium mb-2">
-                    אימייל *
+                    {isHebrew ? 'אימייל *' : 'Email *'}
                   </label>
                   <Input
                     id="email"
@@ -150,7 +174,7 @@ export const Contact = () => {
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium mb-2">
-                    טלפון
+                    {isHebrew ? 'טלפון' : 'Phone'}
                   </label>
                   <Input
                     id="phone"
@@ -164,22 +188,22 @@ export const Contact = () => {
                 </div>
                 <div>
                   <label htmlFor="company" className="block text-sm font-medium mb-2">
-                    חברה
+                    {isHebrew ? 'חברה' : 'Company'}
                   </label>
                   <Input
                     id="company"
                     name="company"
                     value={formData.company}
                     onChange={handleChange}
-                    placeholder="שם החברה"
-                    className="text-right"
+                    placeholder={isHebrew ? 'שם החברה' : 'Company name'}
+                    className={isHebrew ? 'text-right' : 'text-left'}
                   />
                 </div>
               </div>
 
               <div>
                 <label htmlFor="message" className="block text-sm font-medium mb-2">
-                  הודעה *
+                  {isHebrew ? 'הודעה *' : 'Message *'}
                 </label>
                 <Textarea
                   id="message"
@@ -187,9 +211,9 @@ export const Contact = () => {
                   value={formData.message}
                   onChange={handleChange}
                   required
-                  placeholder="איך אוכל לעזור?"
+                  placeholder={isHebrew ? 'איך אוכל לעזור?' : 'How can I help?'}
                   rows={5}
-                  className="text-right resize-none"
+                  className={`${isHebrew ? 'text-right' : 'text-left'} resize-none`}
                 />
               </div>
 
@@ -201,11 +225,11 @@ export const Contact = () => {
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
-                  'שולח...'
+                  isHebrew ? 'שולח...' : 'Sending...'
                 ) : (
                   <>
                     <Send size={18} />
-                    שלח הודעה
+                    {isHebrew ? 'שלח הודעה' : 'Send message'}
                   </>
                 )}
               </Button>
