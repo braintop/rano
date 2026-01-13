@@ -126,9 +126,14 @@ export const Header = () => {
               </button>
             </div>
 
+            <Button variant="gold" size="sm" asChild className="whitespace-nowrap">
+              <a href="#contact">{isHebrew ? 'בואו נדבר' : "Let's talk"}</a>
+            </Button>
+
             <button
               className="p-2"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? 'סגור תפריט' : 'פתח תפריט'}
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
