@@ -6,6 +6,8 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
+import { db } from '@/lib/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 export const Contact = () => {
   const { language } = useLanguage();
@@ -17,28 +19,97 @@ export const Contact = () => {
     email: '',
     phone: '',
     company: '',
+    city: '',
+    serviceType: '',
+    serviceTypeOther: '',
     message: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast.success(
-      isHebrew
-        ? 'ההודעה נשלחה בהצלחה! אחזור אליך בהקדם.'
-        : 'Your message was sent successfully. I will get back to you soon.',
-    );
-    setFormData({ name: '', email: '', phone: '', company: '', message: '' });
-    setIsSubmitting(false);
+
+    try {
+      const finalServiceType =
+        formData.serviceType === 'other'
+          ? formData.serviceTypeOther ||
+            (isHebrew ? 'אחר (לא צוין סוג)' : 'Other (not specified)')
+          : formData.serviceType;
+
+      await addDoc(collection(db, 'leads'), {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        company: formData.company,
+        city: formData.city,
+        serviceType: finalServiceType,
+        serviceTypeKey: formData.serviceType,
+        serviceTypeOther: formData.serviceTypeOther,
+        message: formData.message,
+        status: 'new',
+        adminNotes: '',
+        createdAt: serverTimestamp(),
+        language: isHebrew ? 'he' : 'en',
+      });
+
+      toast.success(
+        isHebrew
+          ? 'ההודעה נשלחה בהצלחה! אחזור אליך בהקדם.'
+          : 'Your message was sent successfully. I will get back to you soon.',
+      );
+
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        company: '',
+        city: '',
+        serviceType: '',
+        serviceTypeOther: '',
+        message: '',
+      });
+    } catch (error) {
+      console.error('Error saving lead', error);
+      toast.error(
+        isHebrew
+          ? 'אירעה שגיאה בשמירת ההודעה. נסה שוב מאוחר יותר.'
+          : 'There was an error saving your message. Please try again later.',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
+
+  const serviceTypes = [
+    {
+      value: 'directors_officers',
+      label: isHebrew ? 'דירקטורים ונושאי משרה' : 'Directors & Officers',
+    },
+    {
+      value: 'travel',
+      label: isHebrew ? 'נסיעות לחו״ל' : 'Travel insurance',
+    },
+    {
+      value: 'cyber',
+      label: isHebrew ? 'סייבר' : 'Cyber',
+    },
+    {
+      value: 'professional_liability',
+      label: isHebrew ? 'אחריות מקצועית' : 'Professional liability',
+    },
+    {
+      value: 'clinical_trial',
+      label: isHebrew ? 'ניסוי קליני' : 'Clinical trial',
+    },
+    {
+      value: 'other',
+      label: isHebrew ? 'אחר' : 'Other',
+    },
+  ];
 
   return (
     <section id="contact" className="section-padding bg-background">
@@ -171,7 +242,7 @@ export const Contact = () => {
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-6">
+              <div className="grid sm:grid-cols-3 gap-6">
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium mb-2">
                     {isHebrew ? 'טלפון' : 'Phone'}
@@ -199,6 +270,68 @@ export const Contact = () => {
                     className={isHebrew ? 'text-right' : 'text-left'}
                   />
                 </div>
+                <div>
+                  <label htmlFor="city" className="block text-sm font-medium mb-2">
+                    {isHebrew ? 'עיר (אופציונלי)' : 'City (optional)'}
+                  </label>
+                  <Input
+                    id="city"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    placeholder={isHebrew ? 'לדוגמה: תל אביב' : 'e.g. Tel Aviv'}
+                    className={isHebrew ? 'text-right' : 'text-left'}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="block text-sm font-medium">
+                  {isHebrew ? 'סוג ביטוח מבוקש' : 'Requested insurance type'}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {serviceTypes.map((type) => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          serviceType: type.value,
+                        }))
+                      }
+                      className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                        formData.serviceType === type.value
+                          ? 'bg-gold text-slate-900 border-gold'
+                          : 'bg-transparent text-foreground border-border hover:bg-border/20'
+                      }`}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+                {formData.serviceType === 'other' && (
+                  <div>
+                    <label
+                      htmlFor="serviceTypeOther"
+                      className="block text-sm font-medium mb-2"
+                    >
+                      {isHebrew ? 'אחר – ציין איזה' : 'Other – please specify'}
+                    </label>
+                    <Input
+                      id="serviceTypeOther"
+                      name="serviceTypeOther"
+                      value={formData.serviceTypeOther}
+                      onChange={handleChange}
+                      placeholder={
+                        isHebrew
+                          ? 'לדוגמה: ביטוח מיוחד אחר'
+                          : 'For example: another specific insurance'
+                      }
+                      className={isHebrew ? 'text-right' : 'text-left'}
+                    />
+                  </div>
+                )}
               </div>
 
               <div>
