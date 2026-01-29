@@ -4,8 +4,8 @@ import { Button } from './ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 
 const heContent = {
-  heading: 'מאמרים ו',
-  highlight: 'פרסומים',
+  heading: 'פרסומים',
+  highlight: '',
   description: 'תובנות מקצועיות בנושאי סייבר, ביטוח וניהול סיכונים',
   readMore: 'קרא עוד',
   articles: [
@@ -45,8 +45,8 @@ const heContent = {
 };
 
 const enContent = {
-  heading: 'Articles &',
-  highlight: 'Publications',
+  heading: 'Articles',
+  highlight: '',
   description:
     'Professional insights on cyber, insurance and strategic risk management.',
   readMore: 'Read more',

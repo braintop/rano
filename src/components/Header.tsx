@@ -14,14 +14,16 @@ export const Header = () => {
       ? [
           { href: '#about', label: 'אודות' },
           { href: '#expertise', label: 'התמחויות' },
-          { href: '#articles', label: 'מאמרים' },
+          { href: '#articles', label: 'פרסומים' },
+          { href: '#blog-articles', label: 'מאמרים' },
           { href: '#testimonials', label: 'המלצות' },
           { href: '#contact', label: 'צור קשר' },
         ]
       : [
           { href: '#about', label: 'About' },
           { href: '#expertise', label: 'Expertise' },
-          { href: '#articles', label: 'Articles' },
+          { href: '#articles', label: 'Publications' },
+          { href: '#blog-articles', label: 'Articles' },
           { href: '#testimonials', label: 'Testimonials' },
           { href: '#contact', label: 'Contact' },
         ];

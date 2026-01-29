@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   collection,
   onSnapshot,
@@ -9,6 +9,11 @@ import {
   getDocs,
   writeBatch,
   arrayUnion,
+  addDoc,
+  deleteDoc,
+  serverTimestamp,
+  getDoc,
+  setDoc,
 } from 'firebase/firestore';
 import {
   onAuthStateChanged,
@@ -23,7 +28,20 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Moon, Sun, Trash2 } from 'lucide-react';
+import {
+  Moon,
+  Sun,
+  Trash2,
+  Bold,
+  Italic,
+  Underline,
+  List,
+  ListOrdered,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Link2,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import public150Data from '@/data/public_150_json.json';
 
@@ -60,6 +78,42 @@ type PublicRow = {
   call_status?: PublicStatus;
 };
 
+type ArticleStatus = 'draft' | 'published';
+
+type Article = {
+  id: string;
+  slug: string;
+  status: ArticleStatus;
+  titleHe: string;
+  subtitleHe: string;
+  bodyHe: string;
+  titleEn: string;
+  subtitleEn: string;
+  bodyEn: string;
+  createdAt?: { seconds: number; nanoseconds: number };
+  updatedAt?: { seconds: number; nanoseconds: number };
+};
+
+type SocialConfig = {
+  linkedinUrl: string;
+  facebookUrl: string;
+  twitterUrl: string;
+  instagramUrl: string;
+  updatedAt?: { seconds: number; nanoseconds: number };
+};
+
+type SeoConfig = {
+  titleHe: string;
+  descriptionHe: string;
+  keywordsHe: string;
+  tagsHe: string;
+  titleEn: string;
+  descriptionEn: string;
+  keywordsEn: string;
+  tagsEn: string;
+  updatedAt?: { seconds: number; nanoseconds: number };
+};
+
 const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS ?? '')
   .split(',')
   .map((email) => email.trim().toLowerCase())
@@ -90,6 +144,54 @@ export const AdminLeads = () => {
     useState<Record<string, string[]>>({});
   const [publicEditDrafts, setPublicEditDrafts] =
     useState<Record<string, string>>({});
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [isLoadingArticles, setIsLoadingArticles] = useState(false);
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(
+    null,
+  );
+  const [suppressAutoSelectArticle, setSuppressAutoSelectArticle] =
+    useState(false);
+  const [socialConfig, setSocialConfig] = useState<SocialConfig>({
+    linkedinUrl: '',
+    facebookUrl: '',
+    twitterUrl: '',
+    instagramUrl: '',
+  });
+  const [isLoadingSocial, setIsLoadingSocial] = useState(false);
+  const [isSavingSocial, setIsSavingSocial] = useState(false);
+  const [seoConfig, setSeoConfig] = useState<SeoConfig>({
+    titleHe: '',
+    descriptionHe: '',
+    keywordsHe: '',
+    tagsHe: '',
+    titleEn: '',
+    descriptionEn: '',
+    keywordsEn: '',
+    tagsEn: '',
+  });
+  const [isLoadingSeo, setIsLoadingSeo] = useState(false);
+  const [isSavingSeo, setIsSavingSeo] = useState(false);
+  const [articleLang, setArticleLang] = useState<'he' | 'en'>('he');
+  const [articleForm, setArticleForm] = useState<{
+    slug: string;
+    status: ArticleStatus;
+    titleHe: string;
+    subtitleHe: string;
+    bodyHe: string;
+    titleEn: string;
+    subtitleEn: string;
+    bodyEn: string;
+  }>({
+    slug: '',
+    status: 'draft',
+    titleHe: '',
+    subtitleHe: '',
+    bodyHe: '',
+    titleEn: '',
+    subtitleEn: '',
+    bodyEn: '',
+  });
+  const articleEditorRef = useRef<HTMLDivElement | null>(null);
 
   const isAuthorized =
     !!user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
@@ -128,6 +230,135 @@ export const AdminLeads = () => {
     );
 
     return () => unsubscribe();
+  }, [isAuthorized]);
+
+  // Articles collection (מאמרים)
+  useEffect(() => {
+    if (!isAuthorized) {
+      setArticles([]);
+      setSelectedArticleId(null);
+      return;
+    }
+
+    const colRef = collection(db, 'articles');
+    const q = query(colRef, orderBy('createdAt', 'desc'));
+
+    setIsLoadingArticles(true);
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const data: Article[] = snapshot.docs.map((d) => {
+          const raw = d.data() as any;
+          return {
+            id: d.id,
+            slug: raw.slug ?? '',
+            status: (raw.status as ArticleStatus) ?? 'draft',
+            titleHe: raw.titleHe ?? '',
+            subtitleHe: raw.subtitleHe ?? '',
+            bodyHe: raw.bodyHe ?? '',
+            titleEn: raw.titleEn ?? '',
+            subtitleEn: raw.subtitleEn ?? '',
+            bodyEn: raw.bodyEn ?? '',
+            createdAt: raw.createdAt,
+            updatedAt: raw.updatedAt,
+          };
+        });
+        setArticles(data);
+        setIsLoadingArticles(false);
+      },
+      () => setIsLoadingArticles(false),
+    );
+
+    return () => unsubscribe();
+  }, [isAuthorized]);
+
+  // Social config (public_config/social_links)
+  useEffect(() => {
+    if (!isAuthorized) {
+      setSocialConfig({
+        linkedinUrl: '',
+        facebookUrl: '',
+        twitterUrl: '',
+        instagramUrl: '',
+      });
+      return;
+    }
+
+    const load = async () => {
+      try {
+        setIsLoadingSocial(true);
+        const ref = doc(db, 'public_config', 'social_links');
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const data = snap.data() as any;
+          setSocialConfig({
+            linkedinUrl: data.linkedinUrl ?? '',
+            facebookUrl: data.facebookUrl ?? '',
+            twitterUrl: data.twitterUrl ?? '',
+            instagramUrl: data.instagramUrl ?? '',
+            updatedAt: data.updatedAt,
+          });
+        } else {
+          setSocialConfig({
+            linkedinUrl: '',
+            facebookUrl: '',
+            twitterUrl: '',
+            instagramUrl: '',
+          });
+        }
+      } catch (error) {
+        console.error('Error loading social config:', error);
+      } finally {
+        setIsLoadingSocial(false);
+      }
+    };
+
+    void load();
+  }, [isAuthorized]);
+
+  // SEO config (public_config/site)
+  useEffect(() => {
+    if (!isAuthorized) {
+      setSeoConfig({
+        titleHe: '',
+        descriptionHe: '',
+        keywordsHe: '',
+        tagsHe: '',
+        titleEn: '',
+        descriptionEn: '',
+        keywordsEn: '',
+        tagsEn: '',
+      });
+      return;
+    }
+
+    const loadSeo = async () => {
+      try {
+        setIsLoadingSeo(true);
+        const ref = doc(db, 'public_config', 'site');
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const data = snap.data() as any;
+          setSeoConfig({
+            titleHe: data.titleHe ?? '',
+            descriptionHe: data.descriptionHe ?? '',
+            keywordsHe: data.keywordsHe ?? '',
+            tagsHe: data.tagsHe ?? '',
+            titleEn: data.titleEn ?? '',
+            descriptionEn: data.descriptionEn ?? '',
+            keywordsEn: data.keywordsEn ?? '',
+            tagsEn: data.tagsEn ?? '',
+            updatedAt: data.updatedAt,
+          });
+        }
+      } catch (error) {
+        console.error('Error loading SEO config:', error);
+      } finally {
+        setIsLoadingSeo(false);
+      }
+    };
+
+    void loadSeo();
   }, [isAuthorized]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -583,6 +814,267 @@ export const AdminLeads = () => {
     }
   };
 
+  const resetArticleForm = () => {
+    setArticleForm({
+      slug: '',
+      status: 'draft',
+      titleHe: '',
+      subtitleHe: '',
+      bodyHe: '',
+      titleEn: '',
+      subtitleEn: '',
+      bodyEn: '',
+    });
+    setArticleLang('he');
+  };
+
+  const loadArticleToForm = (article: Article) => {
+    setSelectedArticleId(article.id);
+    setArticleForm({
+      slug: article.slug,
+      status: article.status ?? 'draft',
+      titleHe: article.titleHe ?? '',
+      subtitleHe: article.subtitleHe ?? '',
+      bodyHe: article.bodyHe ?? '',
+      titleEn: article.titleEn ?? '',
+      subtitleEn: article.subtitleEn ?? '',
+      bodyEn: article.bodyEn ?? '',
+    });
+    setArticleLang('he');
+  };
+
+  useEffect(() => {
+    // When switching to Articles tab, auto-select first article if none selected
+    if (
+      topSection === 'articles' &&
+      articles.length > 0 &&
+      !selectedArticleId &&
+      !suppressAutoSelectArticle
+    ) {
+      loadArticleToForm(articles[0]);
+    }
+  }, [topSection, articles, selectedArticleId, suppressAutoSelectArticle]);
+
+  const handleSelectArticle = (article: Article) => {
+    setSuppressAutoSelectArticle(false);
+    loadArticleToForm(article);
+  };
+
+  const handleNewArticle = () => {
+    setSelectedArticleId(null);
+    setSuppressAutoSelectArticle(true);
+    resetArticleForm();
+  };
+
+  const handleArticleFieldChange = (field: keyof typeof articleForm, value: string) => {
+    setArticleForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const handleArticleSave = async () => {
+    if (!articleForm.slug.trim()) {
+      window.alert(
+        isHebrew ? 'חייבים להגדיר slug לכתובת המאמר.' : 'Slug is required.',
+      );
+      return;
+    }
+
+    const payload = {
+      slug: articleForm.slug.trim(),
+      status: articleForm.status,
+      titleHe: articleForm.titleHe.trim(),
+      subtitleHe: articleForm.subtitleHe.trim(),
+      bodyHe: articleForm.bodyHe,
+      titleEn: articleForm.titleEn.trim(),
+      subtitleEn: articleForm.subtitleEn.trim(),
+      bodyEn: articleForm.bodyEn,
+      updatedAt: serverTimestamp(),
+    };
+
+    try {
+      if (selectedArticleId) {
+        const ref = doc(db, 'articles', selectedArticleId);
+        await updateDoc(ref, payload);
+
+        const { updatedAt: _ignore, ...rest } = payload;
+
+        // עדכון מיידי גם ב־state המקומי
+        setArticles((current) =>
+          current.map((article) =>
+            article.id === selectedArticleId
+              ? {
+                  ...article,
+                  ...rest,
+                }
+              : article,
+          ),
+        );
+      } else {
+        const colRef = collection(db, 'articles');
+        const ref = await addDoc(colRef, {
+          ...payload,
+          createdAt: serverTimestamp(),
+        });
+        setSelectedArticleId(ref.id);
+
+         // הוספה מיידית לרשימת המאמרים (לפני שה‑snapshot מביא עדכון)
+         setArticles((current) => [
+           {
+             id: ref.id,
+             slug: articleForm.slug.trim(),
+             status: articleForm.status,
+             titleHe: articleForm.titleHe.trim(),
+             subtitleHe: articleForm.subtitleHe.trim(),
+             bodyHe: articleForm.bodyHe,
+             titleEn: articleForm.titleEn.trim(),
+             subtitleEn: articleForm.subtitleEn.trim(),
+             bodyEn: articleForm.bodyEn,
+           },
+           ...current,
+         ]);
+      }
+
+      window.alert(
+        isHebrew ? 'המאמר נשמר בהצלחה.' : 'Article saved successfully.',
+      );
+    } catch (error) {
+      console.error('Error saving article:', error);
+      window.alert(
+        isHebrew
+          ? 'אירעה שגיאה בעת שמירת המאמר. ראה קונסול לפרטים.'
+          : 'An error occurred while saving the article. See console for details.',
+      );
+    }
+  };
+
+  const handleDeleteArticle = async (article: Article) => {
+    if (!window.confirm(isHebrew ? 'למחוק את המאמר?' : 'Delete this article?')) {
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, 'articles', article.id));
+      setArticles((current) => current.filter((a) => a.id !== article.id));
+      if (selectedArticleId === article.id) {
+        resetArticleForm();
+        setSelectedArticleId(null);
+      }
+    } catch (error) {
+      console.error('Error deleting article:', error);
+      window.alert(
+        isHebrew
+          ? 'אירעה שגיאה בעת מחיקת המאמר. ראה קונסול לפרטים.'
+          : 'An error occurred while deleting the article. See console for details.',
+      );
+    }
+  };
+
+  const handleArticleCommand = (command: string) => {
+    if (!articleEditorRef.current) return;
+    articleEditorRef.current.focus();
+
+    if (command === 'createLink') {
+      const url = window.prompt(
+        isHebrew ? 'הכנס כתובת קישור (URL)' : 'Enter link URL',
+      );
+      if (!url) return;
+      document.execCommand('createLink', false, url);
+      return;
+    }
+
+    if (command === 'removeFormat') {
+      document.execCommand('removeFormat', false);
+      return;
+    }
+
+    document.execCommand(command, false);
+  };
+
+  const handleSocialFieldChange = (
+    field: keyof SocialConfig,
+    value: string,
+  ) => {
+    setSocialConfig((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const handleSaveSocial = async () => {
+    try {
+      setIsSavingSocial(true);
+      const ref = doc(db, 'public_config', 'social_links');
+      await setDoc(
+        ref,
+        {
+          linkedinUrl: socialConfig.linkedinUrl.trim(),
+          facebookUrl: socialConfig.facebookUrl.trim(),
+          twitterUrl: socialConfig.twitterUrl.trim(),
+          instagramUrl: socialConfig.instagramUrl.trim(),
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+      window.alert(
+        isHebrew
+          ? 'קישורי הרשתות החברתיות נשמרו בהצלחה.'
+          : 'Social links saved successfully.',
+      );
+    } catch (error) {
+      console.error('Error saving social config:', error);
+      window.alert(
+        isHebrew
+          ? 'אירעה שגיאה בשמירת הקישורים. ראה קונסול לפרטים.'
+          : 'An error occurred while saving social links. See console for details.',
+      );
+    } finally {
+      setIsSavingSocial(false);
+    }
+  };
+
+  const handleSeoFieldChange = (field: keyof SeoConfig, value: string) => {
+    setSeoConfig((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const handleSaveSeo = async () => {
+    try {
+      setIsSavingSeo(true);
+      const ref = doc(db, 'public_config', 'site');
+      await setDoc(
+        ref,
+        {
+          titleHe: seoConfig.titleHe.trim(),
+          descriptionHe: seoConfig.descriptionHe.trim(),
+          keywordsHe: seoConfig.keywordsHe.trim(),
+          tagsHe: seoConfig.tagsHe.trim(),
+          titleEn: seoConfig.titleEn.trim(),
+          descriptionEn: seoConfig.descriptionEn.trim(),
+          keywordsEn: seoConfig.keywordsEn.trim(),
+          tagsEn: seoConfig.tagsEn.trim(),
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+      window.alert(
+        isHebrew ? 'הגדרות ה‑SEO נשמרו בהצלחה.' : 'SEO settings saved successfully.',
+      );
+    } catch (error) {
+      console.error('Error saving SEO config:', error);
+      window.alert(
+        isHebrew
+          ? 'אירעה שגיאה בשמירת ה‑SEO. ראה קונסול לפרטים.'
+          : 'An error occurred while saving SEO settings. See console for details.',
+      );
+    } finally {
+      setIsSavingSeo(false);
+    }
+  };
+
   const handleUpdatePublicStatus = async (
     row: PublicRow,
     status: PublicStatus,
@@ -617,52 +1109,79 @@ export const AdminLeads = () => {
     >
       <div className="container-narrow" dir={isHebrew ? 'rtl' : 'ltr'}>
         <header className="mb-8 flex flex-col gap-4">
-          {/* Main admin navbar (Leads / Articles / Social / SEO) */}
-          <nav
-            className={cn(
-              'inline-flex items-center self-start rounded-full border px-1 py-1 text-xs md:text-sm',
-              isDarkTheme
-                ? 'border-slate-700 bg-slate-900/80'
-                : 'border-slate-200 bg-white',
-            )}
-          >
-            {[
-              { id: 'leads' as const, labelHe: 'לידים', labelEn: 'Leads' },
-              { id: 'articles' as const, labelHe: 'מאמרים', labelEn: 'Articles' },
-              {
-                id: 'social' as const,
-                labelHe: 'רשתות חברתיות',
-                labelEn: 'Social',
-              },
-              { id: 'seo' as const, labelHe: 'SEO', labelEn: 'SEO' },
-            ].map((item) => {
-              const isActive = topSection === item.id;
-              const isLeads = item.id === 'leads';
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    setTopSection(item.id);
-                    if (isLeads) {
-                      navigate('/0522577194/admin');
-                    }
-                  }}
-                  className={cn(
-                    'px-3 py-1 rounded-full transition-colors',
-                    isActive
-                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
-                      : isDarkTheme
-                      ? 'text-slate-200 hover:bg-slate-800'
-                      : 'text-slate-700 hover:bg-slate-100',
-                    !isLeads && 'cursor-default',
-                  )}
-                >
-                  {isHebrew ? item.labelHe : item.labelEn}
-                </button>
-              );
-            })}
-          </nav>
+          {/* Main admin navbar (Leads / Articles / Social / SEO) + theme toggle */}
+          <div className="flex items-center justify-between gap-3">
+            <nav
+              className={cn(
+                'inline-flex items-center rounded-full border px-1 py-1 text-xs md:text-sm',
+                isDarkTheme
+                  ? 'border-slate-700 bg-slate-900/80'
+                  : 'border-slate-200 bg-white',
+              )}
+            >
+              {[
+                { id: 'leads' as const, labelHe: 'לידים', labelEn: 'Leads' },
+                { id: 'articles' as const, labelHe: 'מאמרים', labelEn: 'Articles' },
+                {
+                  id: 'social' as const,
+                  labelHe: 'רשתות חברתיות',
+                  labelEn: 'Social',
+                },
+                { id: 'seo' as const, labelHe: 'SEO', labelEn: 'SEO' },
+              ].map((item) => {
+                const isActive = topSection === item.id;
+                const isLeads = item.id === 'leads';
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setTopSection(item.id);
+                      if (isLeads) {
+                        navigate('/0522577194/admin');
+                      }
+                    }}
+                    className={cn(
+                      'px-3 py-1 rounded-full transition-colors',
+                      isActive
+                        ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                        : isDarkTheme
+                        ? 'text-slate-200 hover:bg-slate-800'
+                        : 'text-slate-700 hover:bg-slate-100',
+                      !isLeads && 'cursor-default',
+                    )}
+                  >
+                    {isHebrew ? item.labelHe : item.labelEn}
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* Theme toggle next to SEO */}
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              onClick={() => setTheme(isDarkTheme ? 'light' : 'dark')}
+              className={cn(
+                'h-9 w-9 rounded-full border',
+                isDarkTheme
+                  ? 'bg-slate-900 border-slate-600 text-yellow-300'
+                  : 'bg-white border-slate-300 text-slate-800',
+              )}
+              aria-label={
+                isHebrew
+                  ? isDarkTheme
+                    ? 'החלף למצב אור'
+                    : 'החלף למצב כהה'
+                  : isDarkTheme
+                  ? 'Switch to light mode'
+                  : 'Switch to dark mode'
+              }
+            >
+              {isDarkTheme ? <Sun size={16} /> : <Moon size={16} />}
+            </Button>
+          </div>
 
           {topSection === 'leads' && (
             <div>
@@ -734,30 +1253,6 @@ export const AdminLeads = () => {
                         </div>
                       )}
                     </div>
-
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="outline"
-                      onClick={() => setTheme(isDarkTheme ? 'light' : 'dark')}
-                      className={cn(
-                        'h-9 w-9 rounded-full border',
-                        isDarkTheme
-                          ? 'bg-slate-900 border-slate-600 text-yellow-300'
-                          : 'bg-white border-slate-300 text-slate-800',
-                      )}
-                      aria-label={
-                        isHebrew
-                          ? isDarkTheme
-                            ? 'החלף למצב אור'
-                            : 'החלף למצב כהה'
-                          : isDarkTheme
-                          ? 'Switch to light mode'
-                          : 'Switch to dark mode'
-                      }
-                    >
-                      {isDarkTheme ? <Sun size={16} /> : <Moon size={16} />}
-                    </Button>
                   </div>
 
                   <p className="text-xs text-slate-500">
@@ -894,14 +1389,754 @@ export const AdminLeads = () => {
               {isHebrew ? 'התנתק והתחבר עם משתמש אחר' : 'Log out and try another user'}
             </Button>
           </div>
-        ) : topSection !== 'leads' ? (
-          <div className="mt-8 text-center text-sm text-slate-400">
-            {topSection === 'articles' &&
-              (isHebrew ? 'מאמרים' : 'Articles')}
-            {topSection === 'social' &&
-              (isHebrew ? 'רשתות חברתיות' : 'Social networks')}
-            {topSection === 'seo' && (isHebrew ? 'SEO' : 'SEO')}
+        ) : topSection === 'articles' ? (
+          <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,320px),minmax(0,1fr)]">
+            {/* Articles list */}
+            <section
+              className={cn(
+                'rounded-2xl border p-4 flex flex-col gap-4',
+                isDarkTheme
+                  ? 'bg-slate-900/70 border-slate-800'
+                  : 'bg-white border-slate-200 shadow-sm',
+              )}
+            >
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div>
+                  <h2 className="text-base md:text-lg font-semibold">
+                    {isHebrew ? 'מאמרים' : 'Articles'}
+                  </h2>
+                  <p className="text-[11px] md:text-xs text-slate-400 mt-0.5">
+                    {isHebrew
+                      ? 'ניהול מאמרים + פרסום באתר'
+                      : 'Manage articles and publish to the site'}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="rounded-full bg-amber-400 text-black hover:bg-amber-300"
+                  onClick={handleNewArticle}
+                >
+                  {isHebrew ? '+ הוסף מאמר' : '+ Add article'}
+                </Button>
+              </div>
+
+              {isLoadingArticles ? (
+                <p className="text-sm text-slate-400">
+                  {isHebrew ? 'טוען מאמרים...' : 'Loading articles...'}
+                </p>
+              ) : articles.length === 0 ? (
+                <p className="text-sm text-slate-400">
+                  {isHebrew
+                    ? 'עדיין אין מאמרים. לחץ על "+ הוסף מאמר" כדי להתחיל.'
+                    : 'No articles yet. Click "+ Add article" to start.'}
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {articles.map((article) => {
+                    const isActive = selectedArticleId === article.id;
+                    const statusLabel =
+                      article.status === 'published'
+                        ? isHebrew
+                          ? 'מפורסם'
+                          : 'Published'
+                        : isHebrew
+                        ? 'טיוטה'
+                        : 'Draft';
+                    return (
+                      <div
+                        key={article.id}
+                        onClick={() => handleSelectArticle(article)}
+                        className={cn(
+                          'w-full rounded-2xl border px-3 py-3 text-right flex items-center justify-between gap-3 transition-colors cursor-pointer',
+                          isActive
+                            ? 'border-amber-400 bg-amber-50/10'
+                            : isDarkTheme
+                            ? 'border-slate-700 hover:bg-slate-900'
+                            : 'border-slate-200 hover:bg-slate-50',
+                        )}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">
+                            {article.titleHe || article.titleEn || article.slug}
+                          </p>
+                          <p className="text-[11px] text-slate-400 truncate">
+                            {article.slug}
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            {isHebrew ? 'סטטוס: ' : 'Status: '}
+                            <span
+                              className={cn(
+                                'inline-flex rounded-full px-2 py-0.5 text-[10px] border',
+                                article.status === 'published'
+                                  ? 'border-emerald-500 text-emerald-500'
+                                  : 'border-slate-400 text-slate-500',
+                              )}
+                            >
+                              {statusLabel}
+                            </span>
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteArticle(article);
+                          }}
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-500 hover:bg-rose-50 hover:text-rose-500"
+                          aria-label={isHebrew ? 'מחק מאמר' : 'Delete article'}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            {/* Article editor */}
+            <section
+              className={cn(
+                'rounded-2xl border p-4 md:p-6 flex flex-col gap-4',
+                isDarkTheme
+                  ? 'bg-slate-900/70 border-slate-800'
+                  : 'bg-white border-slate-200 shadow-sm',
+              )}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base md:text-lg font-semibold">
+                    {isHebrew ? 'עריכת מאמר' : 'Edit article'}
+                  </h2>
+                  <p className="text-[11px] md:text-xs text-slate-400 mt-0.5">
+                    URL: <span className="font-mono text-xs">/articles/slug</span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex rounded-full border text-xs overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setArticleLang('he')}
+                      className={cn(
+                        'px-3 py-1',
+                        articleLang === 'he'
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-transparent text-slate-500',
+                      )}
+                    >
+                      עברית
+                    </button>
+                  </div>
+                  <div className="flex rounded-full border text-xs overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setArticleLang('en')}
+                      className={cn(
+                        'px-3 py-1',
+                        articleLang === 'en'
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-transparent text-slate-500',
+                      )}
+                    >
+                      English
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-[minmax(0,2fr),minmax(0,1fr)] items-center">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">
+                    {isHebrew ? 'Slug (אנגלית)' : 'Slug (English)'}
+                  </label>
+                  <Input
+                    dir="ltr"
+                    value={articleForm.slug}
+                    onChange={(e) =>
+                      handleArticleFieldChange('slug', e.target.value)
+                    }
+                    placeholder="my-article-slug"
+                    className={cn(
+                      isDarkTheme
+                        ? 'bg-slate-900 border-slate-700'
+                        : 'bg-white border-slate-300',
+                    )}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">
+                    {isHebrew ? 'סטטוס' : 'Status'}
+                  </label>
+                  <select
+                    value={articleForm.status}
+                    onChange={(e) =>
+                      handleArticleFieldChange(
+                        'status',
+                        e.target.value as ArticleStatus,
+                      )
+                    }
+                    className={cn(
+                      'w-full rounded-full border px-3 py-2 text-xs md:text-sm bg-transparent',
+                      isDarkTheme
+                        ? 'border-slate-700 text-slate-100'
+                        : 'border-slate-300 text-slate-800',
+                    )}
+                  >
+                    <option value="draft">
+                      {isHebrew ? 'טיוטה' : 'Draft'}
+                    </option>
+                    <option value="published">
+                      {isHebrew ? 'מפורסם' : 'Published'}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Title / Subtitle / Body for current language */}
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">
+                    {articleLang === 'he'
+                      ? 'כותרת (עברית)'
+                      : 'Title (English)'}
+                  </label>
+                  <Input
+                    value={
+                      articleLang === 'he'
+                        ? articleForm.titleHe
+                        : articleForm.titleEn
+                    }
+                    onChange={(e) =>
+                      handleArticleFieldChange(
+                        articleLang === 'he' ? 'titleHe' : 'titleEn',
+                        e.target.value,
+                      )
+                    }
+                    className={cn(
+                      isDarkTheme
+                        ? 'bg-slate-900 border-slate-700'
+                        : 'bg-white border-slate-300',
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">
+                    {articleLang === 'he'
+                      ? 'תת־כותרת (עברית)'
+                      : 'Subtitle (English)'}
+                  </label>
+                  <Input
+                    value={
+                      articleLang === 'he'
+                        ? articleForm.subtitleHe
+                        : articleForm.subtitleEn
+                    }
+                    onChange={(e) =>
+                      handleArticleFieldChange(
+                        articleLang === 'he' ? 'subtitleHe' : 'subtitleEn',
+                        e.target.value,
+                      )
+                    }
+                    className={cn(
+                      isDarkTheme
+                        ? 'bg-slate-900 border-slate-700'
+                        : 'bg-white border-slate-300',
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-xs text-slate-400">
+                    {articleLang === 'he'
+                      ? 'גוף המאמר (עברית)'
+                      : 'Body (English)'}
+                  </label>
+
+                  {/* Rich text toolbar */}
+                  <div
+                    className={cn(
+                      'inline-flex flex-wrap items-center gap-1 rounded-full border px-2 py-1 text-[11px]',
+                      isDarkTheme
+                        ? 'border-slate-700 bg-slate-900/80'
+                        : 'border-slate-200 bg-slate-50',
+                    )}
+                  >
+                    <span className="px-2 text-slate-400">
+                      {isHebrew ? 'עיצוב טקסט' : 'Text style'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleArticleCommand('bold')}
+                      className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-800/10"
+                    >
+                      <Bold size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleArticleCommand('italic')}
+                      className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-800/10"
+                    >
+                      <Italic size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleArticleCommand('underline')}
+                      className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-800/10"
+                    >
+                      <Underline size={14} />
+                    </button>
+                    <span className="mx-1 h-4 w-px bg-slate-400/40" />
+                    <button
+                      type="button"
+                      onClick={() => handleArticleCommand('insertUnorderedList')}
+                      className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-800/10"
+                    >
+                      <List size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleArticleCommand('insertOrderedList')}
+                      className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-800/10"
+                    >
+                      <ListOrdered size={14} />
+                    </button>
+                    <span className="mx-1 h-4 w-px bg-slate-400/40" />
+                    <button
+                      type="button"
+                      onClick={() => handleArticleCommand('justifyLeft')}
+                      className="hidden md:flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-800/10"
+                    >
+                      <AlignLeft size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleArticleCommand('justifyCenter')}
+                      className="hidden md:flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-800/10"
+                    >
+                      <AlignCenter size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleArticleCommand('justifyRight')}
+                      className="hidden md:flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-800/10"
+                    >
+                      <AlignRight size={14} />
+                    </button>
+                    <span className="mx-1 h-4 w-px bg-slate-400/40" />
+                    <button
+                      type="button"
+                      onClick={() => handleArticleCommand('createLink')}
+                      className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-800/10"
+                    >
+                      <Link2 size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleArticleCommand('removeFormat')}
+                      className="px-2 py-1 rounded-full text-[10px] text-slate-400 hover:bg-slate-800/10"
+                    >
+                      {isHebrew ? 'Tx' : 'Tx'}
+                    </button>
+                  </div>
+
+                  <div
+                    ref={articleEditorRef}
+                    contentEditable
+                    dir={articleLang === 'he' ? 'rtl' : 'ltr'}
+                    className={cn(
+                      'mt-1 min-h-[220px] rounded-2xl border px-3 py-2 text-sm leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-amber-400',
+                      isDarkTheme
+                        ? 'bg-slate-950 border-slate-800'
+                        : 'bg-white border-slate-300',
+                    )}
+                    onInput={(e) => {
+                      const html = (e.currentTarget as HTMLDivElement).innerHTML;
+                      handleArticleFieldChange(
+                        articleLang === 'he' ? 'bodyHe' : 'bodyEn',
+                        html,
+                      );
+                    }}
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        articleLang === 'he'
+                          ? articleForm.bodyHe
+                          : articleForm.bodyEn,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full"
+                  onClick={handleNewArticle}
+                >
+                  {isHebrew ? 'מאמר חדש' : 'New article'}
+                </Button>
+                <Button
+                  type="button"
+                  className="rounded-full bg-amber-400 text-black hover:bg-amber-300"
+                  onClick={handleArticleSave}
+                >
+                  {isHebrew ? 'שמירה' : 'Save'}
+                </Button>
+              </div>
+            </section>
           </div>
+        ) : topSection === 'social' ? (
+          <section
+            className={cn(
+              'mt-8 rounded-2xl border p-4 md:p-6',
+              isDarkTheme
+                ? 'bg-slate-900/70 border-slate-800'
+                : 'bg-white border-slate-200 shadow-sm',
+            )}
+          >
+            <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">
+                  {isHebrew ? 'רשתות חברתיות' : 'Social networks'}
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  {isHebrew
+                    ? 'שמור קישורים לפרופילים הרשמיים שיופיעו באתר.'
+                    : 'Save links to your official profiles that appear on the site.'}
+                </p>
+                <p className="text-[10px] text-slate-500 mt-1 font-mono">
+                  path: <span className="font-semibold">public_config/social_links</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-slate-400" htmlFor="social-linkedin">
+                  LinkedIn URL
+                </label>
+                <Input
+                  id="social-linkedin"
+                  dir="ltr"
+                  placeholder="https://www.linkedin.com/in/username"
+                  value={socialConfig.linkedinUrl}
+                  onChange={(e) =>
+                    handleSocialFieldChange('linkedinUrl', e.target.value)
+                  }
+                  className={cn(
+                    'text-xs md:text-sm',
+                    isDarkTheme
+                      ? 'bg-slate-950 border-slate-800'
+                      : 'bg-white border-slate-300',
+                  )}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-slate-400" htmlFor="social-facebook">
+                  Facebook URL
+                </label>
+                <Input
+                  id="social-facebook"
+                  dir="ltr"
+                  placeholder="https://www.facebook.com/username"
+                  value={socialConfig.facebookUrl}
+                  onChange={(e) =>
+                    handleSocialFieldChange('facebookUrl', e.target.value)
+                  }
+                  className={cn(
+                    'text-xs md:text-sm',
+                    isDarkTheme
+                      ? 'bg-slate-950 border-slate-800'
+                      : 'bg-white border-slate-300',
+                  )}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-slate-400" htmlFor="social-twitter">
+                  X / Twitter URL
+                </label>
+                <Input
+                  id="social-twitter"
+                  dir="ltr"
+                  placeholder="https://x.com/username"
+                  value={socialConfig.twitterUrl}
+                  onChange={(e) =>
+                    handleSocialFieldChange('twitterUrl', e.target.value)
+                  }
+                  className={cn(
+                    'text-xs md:text-sm',
+                    isDarkTheme
+                      ? 'bg-slate-950 border-slate-800'
+                      : 'bg-white border-slate-300',
+                  )}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-slate-400" htmlFor="social-instagram">
+                  Instagram URL
+                </label>
+                <Input
+                  id="social-instagram"
+                  dir="ltr"
+                  placeholder="https://www.instagram.com/username"
+                  value={socialConfig.instagramUrl}
+                  onChange={(e) =>
+                    handleSocialFieldChange('instagramUrl', e.target.value)
+                  }
+                  className={cn(
+                    'text-xs md:text-sm',
+                    isDarkTheme
+                      ? 'bg-slate-950 border-slate-800'
+                      : 'bg-white border-slate-300',
+                  )}
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end">
+              <Button
+                type="button"
+                className="rounded-full bg-amber-400 text-black hover:bg-amber-300"
+                onClick={handleSaveSocial}
+                disabled={isSavingSocial || isLoadingSocial}
+              >
+                {isSavingSocial
+                  ? isHebrew
+                    ? 'שומר...'
+                    : 'Saving...'
+                  : isHebrew
+                  ? 'שמירה'
+                  : 'Save'}
+              </Button>
+            </div>
+          </section>
+        ) : topSection === 'seo' ? (
+          <section className="mt-8 space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">
+                  {isHebrew ? 'תגיות / תיאורי מטה / SEO' : 'SEO / Meta tags'}
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  {isHebrew
+                    ? 'הגדרת כותרות ותיאורי מטה שיופיעו בגוגל ובשיתוף ברשתות.'
+                    : 'Configure titles and meta descriptions used for SEO and social sharing.'}
+                </p>
+              </div>
+              <div className="text-[10px] text-slate-500 text-left md:text-right font-mono">
+                path: <span className="font-semibold">public_config/site</span>
+              </div>
+            </div>
+
+            {isLoadingSeo ? (
+              <p className="text-sm text-slate-400">
+                {isHebrew ? 'טוען הגדרות SEO...' : 'Loading SEO settings...'}
+              </p>
+            ) : (
+              <div
+                className={cn(
+                  'grid gap-4 md:grid-cols-2',
+                  isDarkTheme ? 'text-slate-100' : 'text-slate-900',
+                )}
+              >
+                {/* Hebrew column */}
+                <div
+                  className={cn(
+                    'rounded-2xl border p-4 md:p-6 space-y-4',
+                    isDarkTheme
+                      ? 'bg-slate-900/70 border-slate-800'
+                      : 'bg-white border-slate-200 shadow-sm',
+                  )}
+                >
+                  <h3 className="text-base font-semibold mb-1">
+                    {isHebrew ? 'עברית' : 'Hebrew'}
+                  </h3>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-400">
+                      {isHebrew ? 'כותרת' : 'Title'}
+                    </label>
+                    <Input
+                      value={seoConfig.titleHe}
+                      onChange={(e) =>
+                        handleSeoFieldChange('titleHe', e.target.value)
+                      }
+                      className={cn(
+                        isDarkTheme
+                          ? 'bg-slate-900 border-slate-700'
+                          : 'bg-white border-slate-300',
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-400">
+                      {isHebrew ? 'תיאור' : 'Description'}
+                    </label>
+                    <Textarea
+                      value={seoConfig.descriptionHe}
+                      onChange={(e) =>
+                        handleSeoFieldChange('descriptionHe', e.target.value)
+                      }
+                      rows={5}
+                      className={cn(
+                        'text-sm',
+                        isDarkTheme
+                          ? 'bg-slate-950 border-slate-800'
+                          : 'bg-white border-slate-300',
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-400">
+                      {isHebrew ? 'מילות מפתח (מופרד בפסיקים)' : 'Keywords (comma separated)'}
+                    </label>
+                    <Textarea
+                      value={seoConfig.keywordsHe}
+                      onChange={(e) =>
+                        handleSeoFieldChange('keywordsHe', e.target.value)
+                      }
+                      rows={3}
+                      className={cn(
+                        'text-sm',
+                        isDarkTheme
+                          ? 'bg-slate-950 border-slate-800'
+                          : 'bg-white border-slate-300',
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-400">
+                      {isHebrew ? 'Tags (מופרד בפסיקים)' : 'Tags (comma separated)'}
+                    </label>
+                    <Textarea
+                      value={seoConfig.tagsHe}
+                      onChange={(e) =>
+                        handleSeoFieldChange('tagsHe', e.target.value)
+                      }
+                      rows={3}
+                      className={cn(
+                        'text-sm',
+                        isDarkTheme
+                          ? 'bg-slate-950 border-slate-800'
+                          : 'bg-white border-slate-300',
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* English column */}
+                <div
+                  className={cn(
+                    'rounded-2xl border p-4 md:p-6 space-y-4',
+                    isDarkTheme
+                      ? 'bg-slate-900/70 border-slate-800'
+                      : 'bg-white border-slate-200 shadow-sm',
+                  )}
+                >
+                  <h3 className="text-base font-semibold mb-1">English</h3>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-400">Title</label>
+                    <Input
+                      dir="ltr"
+                      value={seoConfig.titleEn}
+                      onChange={(e) =>
+                        handleSeoFieldChange('titleEn', e.target.value)
+                      }
+                      className={cn(
+                        isDarkTheme
+                          ? 'bg-slate-900 border-slate-700'
+                          : 'bg-white border-slate-300',
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-400">Description</label>
+                    <Textarea
+                      dir="ltr"
+                      value={seoConfig.descriptionEn}
+                      onChange={(e) =>
+                        handleSeoFieldChange('descriptionEn', e.target.value)
+                      }
+                      rows={5}
+                      className={cn(
+                        'text-sm',
+                        isDarkTheme
+                          ? 'bg-slate-950 border-slate-800'
+                          : 'bg-white border-slate-300',
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-400">
+                      Keywords (comma separated)
+                    </label>
+                    <Textarea
+                      dir="ltr"
+                      value={seoConfig.keywordsEn}
+                      onChange={(e) =>
+                        handleSeoFieldChange('keywordsEn', e.target.value)
+                      }
+                      rows={3}
+                      className={cn(
+                        'text-sm',
+                        isDarkTheme
+                          ? 'bg-slate-950 border-slate-800'
+                          : 'bg-white border-slate-300',
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-400">
+                      Tags (comma separated)
+                    </label>
+                    <Textarea
+                      dir="ltr"
+                      value={seoConfig.tagsEn}
+                      onChange={(e) =>
+                        handleSeoFieldChange('tagsEn', e.target.value)
+                      }
+                      rows={3}
+                      className={cn(
+                        'text-sm',
+                        isDarkTheme
+                          ? 'bg-slate-950 border-slate-800'
+                          : 'bg-white border-slate-300',
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end pt-2">
+              <Button
+                type="button"
+                className="rounded-full bg-amber-400 text-black hover:bg-amber-300"
+                onClick={handleSaveSeo}
+                disabled={isSavingSeo}
+              >
+                {isSavingSeo
+                  ? isHebrew
+                    ? 'שומר...'
+                    : 'Saving...'
+                  : isHebrew
+                  ? 'שמירה'
+                  : 'Save'}
+              </Button>
+            </div>
+          </section>
         ) : segment === 'public' ? (
             <div className="mt-8 space-y-6">
             {/* Public search */}
