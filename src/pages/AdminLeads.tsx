@@ -131,7 +131,7 @@ export const AdminLeads = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [segment, setSegment] = useState<'all' | 'public' | 'private' | 'invited_conference'>('all');
   const [topSection, setTopSection] = useState<'leads' | 'articles' | 'social' | 'seo'>('leads');
   const navigate = useNavigate();
@@ -1157,30 +1157,41 @@ export const AdminLeads = () => {
               })}
             </nav>
 
-            {/* Theme toggle next to SEO */}
-            <Button
-              type="button"
-              size="icon"
-              variant="outline"
-              onClick={() => setTheme(isDarkTheme ? 'light' : 'dark')}
-              className={cn(
-                'h-9 w-9 rounded-full border',
-                isDarkTheme
-                  ? 'bg-slate-900 border-slate-600 text-yellow-300'
-                  : 'bg-white border-slate-300 text-slate-800',
-              )}
-              aria-label={
-                isHebrew
-                  ? isDarkTheme
-                    ? 'החלף למצב אור'
-                    : 'החלף למצב כהה'
-                  : isDarkTheme
-                  ? 'Switch to light mode'
-                  : 'Switch to dark mode'
-              }
-            >
-              {isDarkTheme ? <Sun size={16} /> : <Moon size={16} />}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-full px-3 text-xs md:text-sm"
+                onClick={handleLogout}
+              >
+                {isHebrew ? 'התנתקות' : 'Logout'}
+              </Button>
+              {/* Theme toggle */}
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={() => setTheme(isDarkTheme ? 'light' : 'dark')}
+                className={cn(
+                  'h-9 w-9 rounded-full border',
+                  isDarkTheme
+                    ? 'bg-slate-900 border-slate-600 text-yellow-300'
+                    : 'bg-white border-slate-300 text-slate-800',
+                )}
+                aria-label={
+                  isHebrew
+                    ? isDarkTheme
+                      ? 'החלף למצב אור'
+                      : 'החלף למצב כהה'
+                    : isDarkTheme
+                    ? 'Switch to light mode'
+                    : 'Switch to dark mode'
+                }
+              >
+                {isDarkTheme ? <Sun size={16} /> : <Moon size={16} />}
+              </Button>
+            </div>
           </div>
 
           {topSection === 'leads' && (
