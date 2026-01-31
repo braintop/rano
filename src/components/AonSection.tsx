@@ -18,16 +18,6 @@ const heContent = {
       title: 'ניהול סיכונים',
       description: 'פתרונות מקיפים לניהול סיכונים עסקיים וביטוח',
     },
-    {
-      icon: Users,
-      title: 'משאבי אנוש',
-      description: 'ייעוץ פנסיוני וניהול משאבי אנוש',
-    },
-    {
-      icon: TrendingUp,
-      title: 'ביטוח משנה',
-      description: 'פתרונות ביטוח משנה גלובליים',
-    },
   ],
 };
 
@@ -45,16 +35,6 @@ const enContent = {
       icon: Shield,
       title: 'Risk Management',
       description: 'Comprehensive solutions for corporate risk and insurance programs.',
-    },
-    {
-      icon: Users,
-      title: 'Human Capital',
-      description: 'Pension consulting and human capital advisory services.',
-    },
-    {
-      icon: TrendingUp,
-      title: 'Reinsurance',
-      description: 'Global reinsurance solutions for complex portfolios.',
     },
   ],
 };

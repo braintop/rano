@@ -1220,6 +1220,7 @@ export const AdminLeads = () => {
       )}
     >
       <div className="container-narrow" dir={isHebrew ? 'rtl' : 'ltr'}>
+        {user && isAuthorized && (
         <header className="mb-8 flex flex-col gap-4">
           {/* Main admin navbar (Leads / Articles / Social / SEO) + theme toggle */}
           <div className="flex items-center justify-between gap-3">
@@ -1324,8 +1325,48 @@ export const AdminLeads = () => {
 
           {topSection === 'leads' && (
             <>
+              {/* Segments navbar (public / private / invited) */}
+              <nav
+                className={cn(
+                  'mt-2 inline-flex items-center rounded-full border px-1 py-1 text-xs md:text-sm',
+                  isDarkTheme
+                    ? 'border-slate-700 bg-slate-900/70'
+                    : 'border-slate-200 bg-white',
+                )}
+              >
+                {[
+                  { id: 'all' as const, labelHe: 'לידים מהאתר', labelEn: 'All leads' },
+                  { id: 'public' as const, labelHe: 'Public 150', labelEn: 'Public 150' },
+                  { id: 'private' as const, labelHe: 'Private', labelEn: 'Private' },
+                  {
+                    id: 'invited_conference' as const,
+                    labelHe: 'Invited Conference',
+                    labelEn: 'Invited Conference',
+                  },
+                ].map((item) => {
+                  const isActive = segment === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSegment(item.id)}
+                      className={cn(
+                        'px-3 py-1 rounded-full transition-colors',
+                        isActive
+                          ? 'bg-rose-500 text-white'
+                          : isDarkTheme
+                          ? 'text-slate-200 hover:bg-slate-800'
+                          : 'text-slate-700 hover:bg-slate-100',
+                      )}
+                    >
+                      {isHebrew ? item.labelHe : item.labelEn}
+                    </button>
+                  );
+                })}
+              </nav>
+
               {segment === 'all' && (
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-center gap-3 w-full md:max-w-md">
                     <div className="relative flex-1">
                       <Input
@@ -1385,50 +1426,11 @@ export const AdminLeads = () => {
                   </p>
                 </div>
               )}
-
-              {/* Segments navbar (public / private / invited) */}
-              <nav
-                className={cn(
-                  'mt-2 inline-flex items-center rounded-full border px-1 py-1 text-xs md:text-sm',
-                  isDarkTheme
-                    ? 'border-slate-700 bg-slate-900/70'
-                    : 'border-slate-200 bg-white',
-                )}
-              >
-                {[
-                  { id: 'all' as const, labelHe: 'לידים מהאתר', labelEn: 'All leads' },
-                  { id: 'public' as const, labelHe: 'Public 150', labelEn: 'Public 150' },
-                  { id: 'private' as const, labelHe: 'Private', labelEn: 'Private' },
-                  {
-                    id: 'invited_conference' as const,
-                    labelHe: 'Invited Conference',
-                    labelEn: 'Invited Conference',
-                  },
-                ].map((item) => {
-                  const isActive = segment === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setSegment(item.id)}
-                      className={cn(
-                        'px-3 py-1 rounded-full transition-colors',
-                        isActive
-                          ? 'bg-rose-500 text-white'
-                          : isDarkTheme
-                          ? 'text-slate-200 hover:bg-slate-800'
-                          : 'text-slate-700 hover:bg-slate-100',
-                      )}
-                    >
-                      {isHebrew ? item.labelHe : item.labelEn}
-                    </button>
-                  );
-                })}
-              </nav>
             </>
           )}
 
         </header>
+        )}
 
         {authLoading ? (
           <p className="text-slate-400">
@@ -1439,21 +1441,22 @@ export const AdminLeads = () => {
             className={cn(
               'max-w-md mx-auto rounded-xl p-6 space-y-4 border',
               isDarkTheme
-                ? 'bg-slate-900/70 border-slate-700'
-                : 'bg-white border-slate-200 shadow-sm',
+                ? 'bg-slate-900/70 border-slate-700 text-slate-50'
+                : 'bg-white border-slate-200 shadow-sm text-slate-900',
             )}
           >
             <h2 className="text-xl font-semibold">
               {isHebrew ? 'התחברות נדרשת' : 'Login required'}
             </h2>
-            <p className="text-sm text-slate-400">
-              {isHebrew
-                ? 'כדי לצפות בלידים, התחבר עם אימייל וסיסמה של אדמין שהוגדר ב־VITE_ADMIN_EMAILS וחשבון Firebase.'
-                : 'To view leads, log in with an email/password admin account that exists in Firebase and is listed in VITE_ADMIN_EMAILS.'}
-            </p>
             <form onSubmit={handleLogin} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-sm text-slate-200" htmlFor="admin-email">
+                <label
+                  className={cn(
+                    'text-sm',
+                    isDarkTheme ? 'text-slate-200' : 'text-slate-700',
+                  )}
+                  htmlFor="admin-email"
+                >
                   {isHebrew ? 'אימייל' : 'Email'}
                 </label>
                 <Input
@@ -1464,11 +1467,21 @@ export const AdminLeads = () => {
                   onChange={(e) => setLoginEmail(e.target.value)}
                   dir="ltr"
                   required
-                  className="bg-slate-950 border-slate-700"
+                  className={cn(
+                    isDarkTheme
+                      ? 'bg-slate-950 border-slate-700 text-slate-50 placeholder:text-slate-500'
+                      : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400',
+                  )}
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm text-slate-200" htmlFor="admin-password">
+                <label
+                  className={cn(
+                    'text-sm',
+                    isDarkTheme ? 'text-slate-200' : 'text-slate-700',
+                  )}
+                  htmlFor="admin-password"
+                >
                   {isHebrew ? 'סיסמה' : 'Password'}
                 </label>
                 <Input
@@ -1478,7 +1491,11 @@ export const AdminLeads = () => {
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   required
-                  className="bg-slate-950 border-slate-700"
+                  className={cn(
+                    isDarkTheme
+                      ? 'bg-slate-950 border-slate-700 text-slate-50 placeholder:text-slate-500'
+                      : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400',
+                  )}
                 />
               </div>
               {loginError && (

@@ -71,32 +71,6 @@ export const Hero = () => {
             </p>
 
             <div className="flex flex-wrap gap-4 mb-10">
-              <Button
-                variant="gold"
-                size="xl"
-                asChild
-                className="relative"
-              >
-                <motion.a
-                  href="https://smart.fnx.co.il/Travel/landing.html?id=1XQQswJ%20GT8%3D"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  animate={{
-                    scale: [1, 1.04, 1],
-                    backgroundColor: ['#E4002B', '#FFFFFF', '#111827', '#E4002B'],
-                    color: ['#FFFFFF', '#111827', '#FFFFFF', '#FFFFFF'],
-                    boxShadow: [
-                      '0 0 28px rgba(228,0,43,0.55)',
-                      '0 0 22px rgba(255,255,255,0.45)',
-                      '0 0 24px rgba(17,24,39,0.55)',
-                      '0 0 28px rgba(228,0,43,0.55)',
-                    ],
-                  }}
-                  transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
-                >
-                  {isHebrew ? 'לקבלת הצעה ביטוח נסיעות לחו״ל' : 'Travel insurance quote'}
-                </motion.a>
-              </Button>
               <Button variant="heroOutline" size="xl" asChild>
                 <a href="#about">
                   {isHebrew ? 'קרא עוד' : 'Read more'}
@@ -136,7 +110,7 @@ export const Hero = () => {
 
               <div className="w-full h-full rounded-full overflow-hidden border-4 border-gold shadow-2xl">
                 <img
-                  src="/ran.png"
+                  src="/rano.jpeg"
                   alt="רן וינשטוק"
                   className="w-full h-full object-cover object-top"
                 />
