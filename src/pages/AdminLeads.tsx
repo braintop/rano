@@ -69,7 +69,29 @@ type PublicComment = {
   date: string;
 };
 
-type PublicStatus = 'new' | 'in_progress' | 'partial' | 'full' | 'next_year';
+type PublicStatus =
+  | 'new'
+  | 'in_progress'
+  | 'meeting_scheduled'
+  | 'partial'
+  | 'full'
+  | 'next_year';
+
+type InsuranceKey =
+  | 'directors'
+  | 'cyber'
+  | 'professional_liability'
+  | 'product'
+  | 'property'
+  | 'travel'
+  | 'clinical_trials';
+
+type InsuranceNeed = {
+  interested?: boolean;
+  renewalDate?: string;
+};
+
+type InsuranceNeeds = Record<InsuranceKey, InsuranceNeed>;
 
 type PublicRow = {
   [key: string]: any;
@@ -144,6 +166,8 @@ export const AdminLeads = () => {
     useState<Record<string, string[]>>({});
   const [publicEditDrafts, setPublicEditDrafts] =
     useState<Record<string, string>>({});
+  const [publicStatusPriority, setPublicStatusPriority] =
+    useState<PublicStatus | null>(null);
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoadingArticles, setIsLoadingArticles] = useState(false);
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(
@@ -493,6 +517,12 @@ export const AdminLeads = () => {
       activeClass: 'bg-orange-500 text-white',
     },
     {
+      id: 'meeting_scheduled',
+      labelHe: 'נקבעה פגישה',
+      labelEn: 'Meeting scheduled',
+      activeClass: 'bg-purple-500 text-white',
+    },
+    {
       id: 'partial',
       labelHe: 'נסגר חלקית',
       labelEn: 'Partial',
@@ -512,6 +542,28 @@ export const AdminLeads = () => {
     },
   ];
 
+  const insuranceOptions: {
+    id: InsuranceKey;
+    labelHe: string;
+    labelEn: string;
+  }[] = [
+    { id: 'directors', labelHe: 'דירקטורים', labelEn: 'Directors' },
+    { id: 'cyber', labelHe: 'סייבר', labelEn: 'Cyber' },
+    {
+      id: 'professional_liability',
+      labelHe: 'אחריות מקצועית',
+      labelEn: 'Professional liability',
+    },
+    { id: 'product', labelHe: 'מוצר', labelEn: 'Product' },
+    { id: 'property', labelHe: 'רכוש', labelEn: 'Property' },
+    { id: 'travel', labelHe: 'נסיעות', labelEn: 'Travel' },
+    {
+      id: 'clinical_trials',
+      labelHe: 'ניסויים קליניים',
+      labelEn: 'Clinical trials',
+    },
+  ];
+
   const trimmedPublicQuery = publicSearchQuery.trim().toLowerCase();
 
   const filteredPublicRows = trimmedPublicQuery
@@ -525,6 +577,66 @@ export const AdminLeads = () => {
         );
       })
     : publicRows;
+
+  const handleUpdateInsuranceNeed = async (
+    row: PublicRow,
+    key: InsuranceKey,
+    changes: Partial<InsuranceNeed>,
+  ) => {
+    if (!row?._id) return;
+
+    const prev =
+      (row.insurance_needs as InsuranceNeeds | undefined) ?? ({} as InsuranceNeeds);
+    const updatedForKey: InsuranceNeed = {
+      ...(prev[key] ?? {}),
+      ...changes,
+    };
+    const updated: InsuranceNeeds = {
+      ...prev,
+      [key]: updatedForKey,
+    };
+
+    try {
+      const ref = doc(db, 'public_150', row._id);
+      await updateDoc(ref, { insurance_needs: updated });
+
+      setPublicRows((current) =>
+        current.map((r) =>
+          r._id === row._id ? { ...r, insurance_needs: updated } : r,
+        ),
+      );
+    } catch (error) {
+      console.error('Error updating insurance needs for public_150:', error);
+    }
+  };
+
+  const prioritizedPublicRows = publicStatusPriority
+    ? [...filteredPublicRows].sort((a, b) => {
+        const aStatus: PublicStatus = (a.call_status as PublicStatus) ?? 'new';
+        const bStatus: PublicStatus = (b.call_status as PublicStatus) ?? 'new';
+
+        const aMatch = aStatus === publicStatusPriority;
+        const bMatch = bStatus === publicStatusPriority;
+
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+        return 0;
+      })
+    : filteredPublicRows;
+
+  const cyclePublicStatusPriority = () => {
+    const order = publicStatusOptions.map((opt) => opt.id);
+    setPublicStatusPriority((current) => {
+      if (current === null) {
+        return order[0] ?? null;
+      }
+      const idx = order.indexOf(current);
+      if (idx === -1 || idx === order.length - 1) {
+        return null;
+      }
+      return order[idx + 1] ?? null;
+    });
+  };
 
   const handlePublicCsvUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -2220,12 +2332,29 @@ export const AdminLeads = () => {
                   <div className="font-medium">
                     {isHebrew ? 'Telephone' : 'Telephone'}
                       </div>
-                      <div className="font-medium">
-                        {isHebrew ? 'סטטוס' : 'Status'}
+                    <div
+                      className="font-medium cursor-pointer select-none flex items-center justify-center gap-1"
+                      onClick={cyclePublicStatusPriority}
+                      title={
+                        isHebrew
+                          ? 'לחץ כדי להחליף סינון לפי סטטוס (חדש → בטיפול → נקבעה פגישה וכו\')'
+                          : 'Click to cycle status priority (New → In progress → Meeting scheduled etc.)'
+                      }
+                    >
+                      <span>{isHebrew ? 'סטטוס' : 'Status'}</span>
+                      {publicStatusPriority && (
+                        <span className="text-[10px] text-slate-400">
+                          {(
+                            publicStatusOptions.find(
+                              (opt) => opt.id === publicStatusPriority,
+                            ) ?? publicStatusOptions[0]
+                          )[isHebrew ? 'labelHe' : 'labelEn']}
+                        </span>
+                      )}
                   </div>
                 </div>
 
-                {filteredPublicRows.map((row, index) => {
+                {prioritizedPublicRows.map((row, index) => {
                   const appearValue = getField(row, 'appear');
                   const isHidden =
                     appearValue &&
@@ -2266,7 +2395,11 @@ export const AdminLeads = () => {
                       }
                     >
                           <div className="grid gap-3 md:grid-cols-6 md:items-center">
-                        <div className="font-semibold truncate">
+                        <div
+                          className="font-semibold truncate text-left"
+                          dir="ltr"
+                          title={company || (isHebrew ? 'ללא חברה' : 'No company')}
+                        >
                           {company || (isHebrew ? 'ללא חברה' : 'No company')}
                         </div>
                         <div className="truncate">
@@ -2283,8 +2416,9 @@ export const AdminLeads = () => {
                               target="_blank"
                               rel="noopener noreferrer"
                               className="hover:underline"
+                              title={website}
                             >
-                              {website}
+                              {isHebrew ? 'אתר אינטרנט' : 'Website'}
                             </a>
                           ) : (
                             '-'
@@ -2315,7 +2449,7 @@ export const AdminLeads = () => {
                       {isExpanded && (
                         <div className="mt-4 border-t border-slate-700/40 pt-3 text-xs md:text-sm space-y-4">
                           {/* Status buttons */}
-                          <div className="flex flex-wrap gap-2 mb-2">
+                          <div className="flex flex-wrap gap-2 mb-3">
                             {publicStatusOptions.map((opt) => {
                               const currentStatus: PublicStatus =
                                 row.call_status ?? 'new';
@@ -2341,6 +2475,66 @@ export const AdminLeads = () => {
                                 </button>
                               );
                             })}
+                          </div>
+
+                          {/* Insurance needs under status buttons */}
+                          <div className="space-y-2">
+                            <p className="text-slate-400">
+                              {isHebrew
+                                ? 'חידושי ביטוח (סמן + תאריך חידוש)'
+                                : 'Insurance renewals (check + renewal date)'}
+                            </p>
+                            <div className="grid gap-2 md:grid-cols-2">
+                              {insuranceOptions.map((ins) => {
+                                const needs =
+                                  (row.insurance_needs as
+                                    | InsuranceNeeds
+                                    | undefined) ?? ({} as InsuranceNeeds);
+                                const current = needs[ins.id] ?? {};
+                                return (
+                                  <div
+                                    key={ins.id}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <label className="flex items-center gap-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={!!current.interested}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={(e) => {
+                                          e.stopPropagation();
+                                          handleUpdateInsuranceNeed(
+                                            row,
+                                            ins.id,
+                                            { interested: e.target.checked },
+                                          );
+                                        }}
+                                      />
+                                      <span className="text-xs md:text-sm">
+                                        {isHebrew ? ins.labelHe : ins.labelEn}
+                                      </span>
+                                    </label>
+                                    <Input
+                                      type="date"
+                                      value={current.renewalDate ?? ''}
+                                      onClick={(e) => e.stopPropagation()}
+                                      onChange={(e) => {
+                                        e.stopPropagation();
+                                        handleUpdateInsuranceNeed(row, ins.id, {
+                                          renewalDate: e.target.value,
+                                        });
+                                      }}
+                                      className={cn(
+                                        'h-8 text-[11px] max-w-[140px]',
+                                        isDarkTheme
+                                          ? 'bg-slate-900 border-slate-700'
+                                          : 'bg-white border-slate-300',
+                                      )}
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
 
                           {/* Comments at top of card */}
@@ -2564,7 +2758,8 @@ export const AdminLeads = () => {
                                 normalized === 'callstatus' ||
                                 key === 'notes' ||
                                 key === 'comments' ||
-                                key === '_id'
+                                key === '_id' ||
+                                key === 'insurance_needs'
                               ) {
                                 return null;
                               }
