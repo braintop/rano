@@ -216,6 +216,7 @@ export const AdminLeads = () => {
     bodyEn: '',
   });
   const articleEditorRef = useRef<HTMLDivElement | null>(null);
+  const articleSelectionRef = useRef<Range | null>(null);
 
   const isAuthorized =
     !!user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
@@ -1085,6 +1086,14 @@ export const AdminLeads = () => {
 
   const handleArticleCommand = (command: string) => {
     if (!articleEditorRef.current) return;
+
+    // Restore the last text selection inside the editor (so toolbar clicks work)
+    const selection = window.getSelection();
+    if (selection && articleSelectionRef.current) {
+      selection.removeAllRanges();
+      selection.addRange(articleSelectionRef.current);
+    }
+
     articleEditorRef.current.focus();
 
     if (command === 'createLink') {
@@ -1092,7 +1101,47 @@ export const AdminLeads = () => {
         isHebrew ? 'הכנס כתובת קישור (URL)' : 'Enter link URL',
       );
       if (!url) return;
-      document.execCommand('createLink', false, url);
+
+      const currentSelection = window.getSelection();
+
+      // If there is selected text – wrap it with a link
+      if (
+        currentSelection &&
+        currentSelection.rangeCount > 0 &&
+        !currentSelection.isCollapsed
+      ) {
+        document.execCommand('createLink', false, url);
+
+        // Try to style the created link (blue color etc.)
+        const range = currentSelection.getRangeAt(0);
+        let node: Node | null = range.commonAncestorContainer;
+        let anchor: HTMLAnchorElement | null = null;
+
+        while (node && node !== articleEditorRef.current) {
+          if (node instanceof HTMLAnchorElement) {
+            anchor = node;
+            break;
+          }
+          node = (node as HTMLElement).parentElement;
+        }
+
+        if (anchor) {
+          anchor.classList.add(
+            'text-sky-500',
+            'underline',
+            'hover:text-sky-600',
+          );
+          anchor.target = '_blank';
+          anchor.rel = 'noopener noreferrer';
+        }
+      } else {
+        // No selection – insert the URL itself as a clickable, styled link
+        document.execCommand(
+          'insertHTML',
+          false,
+          `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-sky-500 underline hover:text-sky-600">${url}</a>`,
+        );
+      }
       return;
     }
 
@@ -1102,6 +1151,20 @@ export const AdminLeads = () => {
     }
 
     document.execCommand(command, false);
+  };
+
+  const saveArticleSelection = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    // Make sure the selection is inside our editor
+    if (
+      articleEditorRef.current &&
+      articleEditorRef.current.contains(range.commonAncestorContainer)
+    ) {
+      articleSelectionRef.current = range;
+    }
   };
 
   const handleSocialFieldChange = (
@@ -1891,6 +1954,8 @@ export const AdminLeads = () => {
                         ? 'bg-slate-950 border-slate-800'
                         : 'bg-white border-slate-300',
                     )}
+                    onKeyUp={saveArticleSelection}
+                    onMouseUp={saveArticleSelection}
                     onInput={(e) => {
                       const html = (e.currentTarget as HTMLDivElement).innerHTML;
                       handleArticleFieldChange(

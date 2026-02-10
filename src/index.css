@@ -152,4 +152,9 @@
     background: var(--gradient-gold);
     border-radius: 2px;
   }
+
+  /* Article body links – always show as blue links */
+  .article-body a {
+    @apply text-sky-500 underline hover:text-sky-600;
+  }
 }

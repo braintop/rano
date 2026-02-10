@@ -184,7 +184,7 @@ const ArticlePage = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
                 className={cn(
-                  'prose max-w-none text-foreground',
+                  'prose max-w-none text-foreground article-body',
                   isHebrew && 'prose-rtl',
                 )}
                 dir={isHebrew ? 'rtl' : 'ltr'}
