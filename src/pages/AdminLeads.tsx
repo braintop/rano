@@ -217,6 +217,24 @@ export const AdminLeads = () => {
   });
   const articleEditorRef = useRef<HTMLDivElement | null>(null);
   const articleSelectionRef = useRef<Range | null>(null);
+  const [articleColor, setArticleColor] = useState<string>('#1d4ed8');
+  const [isArticleColorMenuOpen, setIsArticleColorMenuOpen] =
+    useState<boolean>(false);
+
+  const ARTICLE_TEXT_COLORS = [
+    '#000000',
+    '#4B5563',
+    '#9CA3AF',
+    '#EF4444',
+    '#F97316',
+    '#EAB308',
+    '#22C55E',
+    '#0EA5E9',
+    '#3B82F6',
+    '#6366F1',
+    '#A855F7',
+    '#EC4899',
+  ];
 
   const isAuthorized =
     !!user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
@@ -1084,7 +1102,7 @@ export const AdminLeads = () => {
     }
   };
 
-  const handleArticleCommand = (command: string) => {
+  const handleArticleCommand = (command: string, value?: string) => {
     if (!articleEditorRef.current) return;
 
     // Restore the last text selection inside the editor (so toolbar clicks work)
@@ -1147,6 +1165,12 @@ export const AdminLeads = () => {
 
     if (command === 'removeFormat') {
       document.execCommand('removeFormat', false);
+      return;
+    }
+
+    if (command === 'foreColor') {
+      if (!value) return;
+      document.execCommand('foreColor', false, value);
       return;
     }
 
@@ -1935,6 +1959,51 @@ export const AdminLeads = () => {
                     >
                       <Link2 size={14} />
                     </button>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setIsArticleColorMenuOpen(
+                            (open) => !open,
+                          )
+                        }
+                        className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-800/10"
+                        title={isHebrew ? 'צבע טקסט' : 'Text color'}
+                      >
+                        <span
+                          className="w-3 h-3 rounded-full border border-slate-400"
+                          style={{ backgroundColor: articleColor }}
+                        />
+                      </button>
+                      {isArticleColorMenuOpen && (
+                        <div
+                          className={cn(
+                            'absolute right-0 mt-2 w-40 rounded-xl border bg-white p-2 shadow-lg z-30',
+                            isDarkTheme &&
+                              'bg-slate-900 border-slate-700',
+                          )}
+                        >
+                          <div className="grid grid-cols-6 gap-1">
+                            {ARTICLE_TEXT_COLORS.map((color) => (
+                              <button
+                                key={color}
+                                type="button"
+                                className="h-5 w-5 rounded-full border border-slate-300"
+                                style={{ backgroundColor: color }}
+                                onClick={() => {
+                                  setArticleColor(color);
+                                  handleArticleCommand(
+                                    'foreColor',
+                                    color,
+                                  );
+                                  setIsArticleColorMenuOpen(false);
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <button
                       type="button"
                       onClick={() => handleArticleCommand('removeFormat')}
