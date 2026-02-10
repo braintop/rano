@@ -220,6 +220,7 @@ export const AdminLeads = () => {
   const [articleColor, setArticleColor] = useState<string>('#1d4ed8');
   const [isArticleColorMenuOpen, setIsArticleColorMenuOpen] =
     useState<boolean>(false);
+  const [articleDirection, setArticleDirection] = useState<'rtl' | 'ltr'>('rtl');
 
   const ARTICLE_TEXT_COLORS = [
     '#000000',
@@ -1191,6 +1192,11 @@ export const AdminLeads = () => {
     }
   };
 
+  // Keep text direction in sync with selected article language by default
+  useEffect(() => {
+    setArticleDirection(articleLang === 'he' ? 'rtl' : 'ltr');
+  }, [articleLang]);
+
   const handleSocialFieldChange = (
     field: keyof SocialConfig,
     value: string,
@@ -1617,112 +1623,8 @@ export const AdminLeads = () => {
             </Button>
           </div>
         ) : topSection === 'articles' ? (
-          <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,320px),minmax(0,1fr)]">
-            {/* Articles list */}
-            <section
-              className={cn(
-                'rounded-2xl border p-4 flex flex-col gap-4',
-                isDarkTheme
-                  ? 'bg-slate-900/70 border-slate-800'
-                  : 'bg-white border-slate-200 shadow-sm',
-              )}
-            >
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <div>
-                  <h2 className="text-base md:text-lg font-semibold">
-                    {isHebrew ? 'מאמרים' : 'Articles'}
-                  </h2>
-                  <p className="text-[11px] md:text-xs text-slate-400 mt-0.5">
-                    {isHebrew
-                      ? 'ניהול מאמרים + פרסום באתר'
-                      : 'Manage articles and publish to the site'}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="rounded-full bg-amber-400 text-black hover:bg-amber-300"
-                  onClick={handleNewArticle}
-                >
-                  {isHebrew ? '+ הוסף מאמר' : '+ Add article'}
-                </Button>
-              </div>
-
-              {isLoadingArticles ? (
-                <p className="text-sm text-slate-400">
-                  {isHebrew ? 'טוען מאמרים...' : 'Loading articles...'}
-                </p>
-              ) : articles.length === 0 ? (
-                <p className="text-sm text-slate-400">
-                  {isHebrew
-                    ? 'עדיין אין מאמרים. לחץ על "+ הוסף מאמר" כדי להתחיל.'
-                    : 'No articles yet. Click "+ Add article" to start.'}
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {articles.map((article) => {
-                    const isActive = selectedArticleId === article.id;
-                    const statusLabel =
-                      article.status === 'published'
-                        ? isHebrew
-                          ? 'מפורסם'
-                          : 'Published'
-                        : isHebrew
-                        ? 'טיוטה'
-                        : 'Draft';
-                    return (
-                      <div
-                        key={article.id}
-                        onClick={() => handleSelectArticle(article)}
-                        className={cn(
-                          'w-full rounded-2xl border px-3 py-3 text-right flex items-center justify-between gap-3 transition-colors cursor-pointer',
-                          isActive
-                            ? 'border-amber-400 bg-amber-50/10'
-                            : isDarkTheme
-                            ? 'border-slate-700 hover:bg-slate-900'
-                            : 'border-slate-200 hover:bg-slate-50',
-                        )}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">
-                            {article.titleHe || article.titleEn || article.slug}
-                          </p>
-                          <p className="text-[11px] text-slate-400 truncate">
-                            {article.slug}
-                          </p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
-                            {isHebrew ? 'סטטוס: ' : 'Status: '}
-                            <span
-                              className={cn(
-                                'inline-flex rounded-full px-2 py-0.5 text-[10px] border',
-                                article.status === 'published'
-                                  ? 'border-emerald-500 text-emerald-500'
-                                  : 'border-slate-400 text-slate-500',
-                              )}
-                            >
-                              {statusLabel}
-                            </span>
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteArticle(article);
-                          }}
-                          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-500 hover:bg-rose-50 hover:text-rose-500"
-                          aria-label={isHebrew ? 'מחק מאמר' : 'Delete article'}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-
-            {/* Article editor */}
+          <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr),minmax(0,320px)]">
+            {/* Article editor (left) */}
             <section
               className={cn(
                 'rounded-2xl border p-4 md:p-6 flex flex-col gap-4',
@@ -2004,6 +1906,32 @@ export const AdminLeads = () => {
                         </div>
                       )}
                     </div>
+                    <span className="mx-1 h-4 w-px bg-slate-400/40" />
+                    {/* Direction: RTL / LTR */}
+                    <button
+                      type="button"
+                      onClick={() => setArticleDirection('rtl')}
+                      className={cn(
+                        'flex h-7 px-2 items-center justify-center rounded-full text-[10px] hover:bg-slate-800/10',
+                        articleDirection === 'rtl' &&
+                          'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900',
+                      )}
+                      title={isHebrew ? 'כיוון מימין לשמאל' : 'Right-to-left'}
+                    >
+                      ¶←
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setArticleDirection('ltr')}
+                      className={cn(
+                        'flex h-7 px-2 items-center justify-center rounded-full text-[10px] hover:bg-slate-800/10',
+                        articleDirection === 'ltr' &&
+                          'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900',
+                      )}
+                      title={isHebrew ? 'כיוון משמאל לימין' : 'Left-to-right'}
+                    >
+                      ¶→
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleArticleCommand('removeFormat')}
@@ -2016,9 +1944,11 @@ export const AdminLeads = () => {
                   <div
                     ref={articleEditorRef}
                     contentEditable
-                    dir={articleLang === 'he' ? 'rtl' : 'ltr'}
+                    dir={articleDirection}
+                    lang={articleLang === 'he' ? 'he' : 'en'}
                     className={cn(
                       'mt-1 min-h-[220px] rounded-2xl border px-3 py-2 text-sm leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-amber-400',
+                      articleDirection === 'rtl' ? 'text-right' : 'text-left',
                       isDarkTheme
                         ? 'bg-slate-950 border-slate-800'
                         : 'bg-white border-slate-300',
@@ -2059,6 +1989,110 @@ export const AdminLeads = () => {
                   {isHebrew ? 'שמירה' : 'Save'}
                 </Button>
               </div>
+            </section>
+
+            {/* Articles list (right) */}
+            <section
+              className={cn(
+                'rounded-2xl border p-4 flex flex-col gap-4',
+                isDarkTheme
+                  ? 'bg-slate-900/70 border-slate-800'
+                  : 'bg-white border-slate-200 shadow-sm',
+              )}
+            >
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div>
+                  <h2 className="text-base md:text-lg font-semibold">
+                    {isHebrew ? 'מאמרים' : 'Articles'}
+                  </h2>
+                  <p className="text-[11px] md:text-xs text-slate-400 mt-0.5">
+                    {isHebrew
+                      ? 'ניהול מאמרים + פרסום באתר'
+                      : 'Manage articles and publish to the site'}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="rounded-full bg-amber-400 text-black hover:bg-amber-300"
+                  onClick={handleNewArticle}
+                >
+                  {isHebrew ? '+ הוסף מאמר' : '+ Add article'}
+                </Button>
+              </div>
+
+              {isLoadingArticles ? (
+                <p className="text-sm text-slate-400">
+                  {isHebrew ? 'טוען מאמרים...' : 'Loading articles...'}
+                </p>
+              ) : articles.length === 0 ? (
+                <p className="text-sm text-slate-400">
+                  {isHebrew
+                    ? 'עדיין אין מאמרים. לחץ על "+ הוסף מאמר" כדי להתחיל.'
+                    : 'No articles yet. Click "+ Add article" to start.'}
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {articles.map((article) => {
+                    const isActive = selectedArticleId === article.id;
+                    const statusLabel =
+                      article.status === 'published'
+                        ? isHebrew
+                          ? 'מפורסם'
+                          : 'Published'
+                        : isHebrew
+                        ? 'טיוטה'
+                        : 'Draft';
+                    return (
+                      <div
+                        key={article.id}
+                        onClick={() => handleSelectArticle(article)}
+                        className={cn(
+                          'w-full rounded-2xl border px-3 py-3 text-right flex items-center justify-between gap-3 transition-colors cursor-pointer',
+                          isActive
+                            ? 'border-amber-400 bg-amber-50/10'
+                            : isDarkTheme
+                            ? 'border-slate-700 hover:bg-slate-900'
+                            : 'border-slate-200 hover:bg-slate-50',
+                        )}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">
+                            {article.titleHe || article.titleEn || article.slug}
+                          </p>
+                          <p className="text-[11px] text-slate-400 truncate">
+                            {article.slug}
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            {isHebrew ? 'סטטוס: ' : 'Status: '}
+                            <span
+                              className={cn(
+                                'inline-flex rounded-full px-2 py-0.5 text-[10px] border',
+                                article.status === 'published'
+                                  ? 'border-emerald-500 text-emerald-500'
+                                  : 'border-slate-400 text-slate-500',
+                              )}
+                            >
+                              {statusLabel}
+                            </span>
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteArticle(article);
+                          }}
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-500 hover:bg-rose-50 hover:text-rose-500"
+                          aria-label={isHebrew ? 'מחק מאמר' : 'Delete article'}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </section>
           </div>
         ) : topSection === 'social' ? (
