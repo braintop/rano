@@ -3,8 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   collection,
-  doc,
-  getDoc,
   getDocs,
   limit,
   query,
@@ -55,54 +53,31 @@ const ArticlePage = () => {
       try {
         setIsLoading(true);
 
-        // Try by ID first
-        const byIdRef = doc(db, 'articles', slug);
-        const byIdSnap = await getDoc(byIdRef);
-        if (byIdSnap.exists()) {
-          const data = byIdSnap.data() as any;
-          console.log('ArticlePage: Found by ID:', data);
-          
-          // Check if published
-          if (data.status && data.status !== 'published') {
-            console.log('ArticlePage: Article is not published, status:', data.status);
-            setArticle(null);
-            return;
-          }
-          
-          setArticle({
-            id: byIdSnap.id,
-            ...data,
-          });
-          return;
-        }
-
-        console.log('ArticlePage: Not found by ID, trying by slug field');
-
-        // Fallback: query by slug field
+        // Query by slug field (works with Firebase Rules: allow list: if true)
         const q = query(
           collection(db, 'articles'),
           where('slug', '==', slug),
           limit(1),
         );
         const snap = await getDocs(q);
+        
         if (!snap.empty) {
           const docSnap = snap.docs[0];
           const data = docSnap.data() as any;
-          console.log('ArticlePage: Found by slug field:', data);
+          console.log('ArticlePage: Found article:', data);
           
-          // Check if published
-          if (data.status && data.status !== 'published') {
+          // Firebase Rules already filter published articles, but double-check
+          if (data.status === 'published') {
+            setArticle({
+              id: docSnap.id,
+              ...data,
+            });
+          } else {
             console.log('ArticlePage: Article is not published, status:', data.status);
             setArticle(null);
-            return;
           }
-          
-          setArticle({
-            id: docSnap.id,
-            ...data,
-          });
         } else {
-          console.log('ArticlePage: Article not found');
+          console.log('ArticlePage: Article not found with slug:', slug);
           setArticle(null);
         }
       } catch (error) {
