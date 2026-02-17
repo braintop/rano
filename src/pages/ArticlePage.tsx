@@ -10,12 +10,14 @@ import {
   query,
   where,
 } from 'firebase/firestore';
+import { Share2 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import { db } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
 import { ReadOnlyRichText } from '@/components/RichTextEditor';
+import { Button } from '@/components/ui/button';
 
 type ArticleStatus = 'draft' | 'published';
 
@@ -177,43 +179,65 @@ const ArticlePage = () => {
                 transition={{ duration: 0.5 }}
                 className="space-y-4"
               >
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-mono text-[11px]">
-                    /articles/{article.slug ?? article.id}
-                  </span>
-                </p>
-                <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground">
-                  {title}
-                </h1>
-                {subtitle && (
-                  <p className="text-lg text-muted-foreground">{subtitle}</p>
-                )}
-                {created && (
-                  <p className="text-xs text-muted-foreground">
-                    {isHebrew ? 'פורסם בתאריך ' : 'Published on '}
-                    {created.toLocaleDateString(
-                      isHebrew ? 'he-IL' : 'en-GB',
-                      {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      },
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 space-y-4">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-mono text-[11px]">
+                        /articles/{article.slug ?? article.id}
+                      </span>
+                    </p>
+                    <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground">
+                      {title}
+                    </h1>
+                    {subtitle && (
+                      <p className="text-lg text-muted-foreground">{subtitle}</p>
                     )}
-                  </p>
-                )}
-                {plainBody && (
-                  <p className="text-xs text-muted-foreground">
-                    {isHebrew
-                      ? `${Math.max(
-                          1,
-                          Math.round(plainBody.length / 800),
-                        )} דקות קריאה`
-                      : `${Math.max(
-                          1,
-                          Math.round(plainBody.length / 800),
-                        )} min read`}
-                  </p>
-                )}
+                    {created && (
+                      <p className="text-xs text-muted-foreground">
+                        {isHebrew ? 'פורסם בתאריך ' : 'Published on '}
+                        {created.toLocaleDateString(
+                          isHebrew ? 'he-IL' : 'en-GB',
+                          {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          },
+                        )}
+                      </p>
+                    )}
+                    {plainBody && (
+                      <p className="text-xs text-muted-foreground">
+                        {isHebrew
+                          ? `${Math.max(
+                              1,
+                              Math.round(plainBody.length / 800),
+                            )} דקות קריאה`
+                          : `${Math.max(
+                              1,
+                              Math.round(plainBody.length / 800),
+                            )} min read`}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    onClick={() => {
+                      const url = window.location.href;
+                      const text = encodeURIComponent(
+                        `${title}\n\n${url}`
+                      );
+                      window.open(
+                        `https://wa.me/?text=${text}`,
+                        '_blank'
+                      );
+                    }}
+                    className="bg-green-500 hover:bg-green-600 text-white flex-shrink-0"
+                    size="lg"
+                    title={isHebrew ? 'שתף בוואטסאפ' : 'Share on WhatsApp'}
+                  >
+                    <Share2 className="h-5 w-5 ml-2" />
+                    {isHebrew ? 'שתף' : 'Share'}
+                  </Button>
+                </div>
               </motion.header>
 
               <motion.div

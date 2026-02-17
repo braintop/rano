@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RichTextEditor from '@/components/RichTextEditor';
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 type ArticleStatus = 'draft' | 'published';
@@ -359,6 +359,24 @@ const AdminArticles = () => {
                       >
                         <Edit className="h-4 w-4 ml-1" />
                         {isHebrew ? 'ערוך' : 'Edit'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const url = `https://www.ranw.tech/articles/${article.slug || article.id}`;
+                          const text = encodeURIComponent(
+                            `${title}\n\n${url}`
+                          );
+                          window.open(
+                            `https://wa.me/?text=${text}`,
+                            '_blank'
+                          );
+                        }}
+                        className="bg-green-500 hover:bg-green-600 text-white"
+                        title={isHebrew ? 'שתף בוואטסאפ' : 'Share on WhatsApp'}
+                      >
+                        <Share2 className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="destructive"

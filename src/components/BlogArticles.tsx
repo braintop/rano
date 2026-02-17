@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileText } from 'lucide-react';
+import { FileText, Share2 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { db } from '@/lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
@@ -135,21 +135,40 @@ export const BlogArticles = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: 0.05 * index }}
-                  className="group card-elevated rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-card"
+                  className="group card-elevated rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-card relative"
                 >
                   <Link
                     to={`/articles/${slugOrId}`}
                     className="block p-6 flex flex-col gap-3"
                   >
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <FileText className="w-4 h-4 text-gold" />
-                      {created && (
-                        <span>
-                          {created.toLocaleDateString(
-                            isHebrew ? 'he-IL' : 'en-GB',
-                          )}
-                        </span>
-                      )}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <FileText className="w-4 h-4 text-gold" />
+                        {created && (
+                          <span>
+                            {created.toLocaleDateString(
+                              isHebrew ? 'he-IL' : 'en-GB',
+                            )}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const url = `https://www.ranw.tech/articles/${slugOrId}`;
+                          const text = encodeURIComponent(
+                            `${title}\n\n${url}`
+                          );
+                          window.open(
+                            `https://wa.me/?text=${text}`,
+                            '_blank'
+                          );
+                        }}
+                        className="p-2 rounded-full bg-green-500 hover:bg-green-600 text-white transition-colors opacity-0 group-hover:opacity-100"
+                        title={isHebrew ? 'שתף בוואטסאפ' : 'Share on WhatsApp'}
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </button>
                     </div>
 
                     <h3 className="font-serif text-xl font-semibold text-foreground group-hover:text-gold transition-colors">

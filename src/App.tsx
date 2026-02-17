@@ -10,6 +10,7 @@ import AdminLeads from "./pages/AdminLeads";
 import AdminArticles from "./pages/AdminArticles";
 import NotFound from "./pages/NotFound";
 import ArticlePage from "./pages/ArticlePage";
+import DebugArticle from "./pages/DebugArticle";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/articles/:slug" element={<ArticlePage />} />
+          <Route path="/debug-article/:slug" element={<DebugArticle />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/accessibility" element={<Accessibility />} />
           <Route path="/0522577194/admin" element={<AdminLeads />} />
