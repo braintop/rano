@@ -26,12 +26,23 @@ export const BlogArticles = () => {
   const isHebrew = language === 'he';
   const [articles, setArticles] = useState<ArticleDoc[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadArticles = async () => {
+      console.log('🔍 [BlogArticles] Starting to load articles...');
+      console.log('🔍 [BlogArticles] Firebase DB object:', db);
+      console.log('🔍 [BlogArticles] Window location:', window.location.href);
+      console.log('🔍 [BlogArticles] User Agent:', navigator.userAgent);
+      
       try {
         setIsLoading(true);
+        console.log('🔍 [BlogArticles] Calling getDocs...');
+        
         const snap = await getDocs(collection(db, 'articles'));
+        console.log('🔍 [BlogArticles] getDocs response:', snap);
+        console.log('🔍 [BlogArticles] Number of docs:', snap.docs.length);
+        
         const docs: ArticleDoc[] = snap.docs.map((d) => {
           const data = d.data() as any;
           return {
@@ -48,9 +59,15 @@ export const BlogArticles = () => {
           };
         });
 
+        console.log('🔍 [BlogArticles] All articles:', docs);
+        console.log('🔍 [BlogArticles] Articles with status:', docs.map(a => ({ id: a.id, status: a.status })));
+
         const published = docs.filter(
           (a) => !a.status || a.status === 'published',
         );
+
+        console.log('🔍 [BlogArticles] Published articles:', published);
+        console.log('🔍 [BlogArticles] Number of published:', published.length);
 
         published.sort((a, b) => {
           const aTs = a.createdAt?.seconds ?? 0;
@@ -59,11 +76,19 @@ export const BlogArticles = () => {
         });
 
         setArticles(published);
+        console.log('✅ [BlogArticles] Articles loaded successfully!');
       } catch (error) {
-        console.error('Error loading articles for homepage:', error);
+        console.error('❌ [BlogArticles] Error loading articles:', error);
+        console.error('❌ [BlogArticles] Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          error: error,
+        });
+        setError(error instanceof Error ? error.message : 'Unknown error');
         setArticles([]);
       } finally {
         setIsLoading(false);
+        console.log('🔍 [BlogArticles] Loading finished');
       }
     };
 
@@ -98,6 +123,20 @@ export const BlogArticles = () => {
           <p className="text-center text-muted-foreground">
             {isHebrew ? 'טוען מאמרים...' : 'Loading articles...'}
           </p>
+        ) : error ? (
+          <div className="text-center space-y-4">
+            <p className="text-red-600 font-bold text-lg">
+              {isHebrew ? '❌ שגיאה בטעינת מאמרים' : '❌ Error loading articles'}
+            </p>
+            <p className="text-sm text-muted-foreground bg-red-50 p-4 rounded-lg border border-red-200">
+              <strong>Error:</strong> {error}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {isHebrew 
+                ? 'פתח את Developer Console (F12) לפרטים נוספים'
+                : 'Open Developer Console (F12) for more details'}
+            </p>
+          </div>
         ) : articles.length === 0 ? (
           <p className="text-center text-muted-foreground">
             {isHebrew
