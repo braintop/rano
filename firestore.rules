@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // האם המשתמש מחובר
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // האם המשתמש הוא אדמין (לפי אימייל)
+    function isAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email in [
+          'asaf.amir@gmail.com',
+          'ranwlaw@gmail.com'
+        ];
+    }
+
+    // =========================
+    // לידים מהטופס באתר - leads
+    // =========================
+    match /leads/{leadId} {
+      // כל אחד יכול ליצור ליד
+      allow create: if true;
+
+      // קריאה / עדכון / מחיקה – רק אדמין
+      allow read, update, delete: if isAdmin();
+    }
+
+    // =========================
+    // Public 150 - טבלת החברות
+    // =========================
+    match /public_150/{docId} {
+      // גם קריאה וגם כתיבה – רק אדמין
+      allow read, write: if isAdmin();
+    }
+
+    // =========================
+    // מאמרים - articles
+    // =========================
+    match /articles/{articleId} {
+      // יצירה / עדכון / מחיקה – רק אדמין
+      allow create, update, delete: if isAdmin();
+
+      // קריאה - מחולק לשני סוגים:
+      
+      // list = קריאת רשימה (getDocs) - כל אחד יכול לקרוא
+      // אחר כך נסנן בקוד רק את ה-published
+      allow list: if true;
+      
+      // get = קריאת מסמך בודד (getDoc) - רק אם published או אדמין
+      allow get: if isAdmin() || resource.data.status == 'published';
+    }
+
+    // =========================
+    // הגדרות ציבוריות - public_config
+    // (SEO, רשתות חברתיות וכו')
+    // =========================
+    match /public_config/{docId} {
+      // קריאה – כל אחד (כדי שהאתר יוכל למשוך SEO / קישורים)
+      allow read: if true;
+
+      // כתיבה (create / update / delete) – רק אדמין
+      allow write: if isAdmin();
+    }
+
+    // =========================
+    // ברירת מחדל – חסום
+    // =========================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
