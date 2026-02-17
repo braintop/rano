@@ -16,7 +16,7 @@
 🔍 [BlogArticles] Firebase DB object: [object]
 🔍 [BlogArticles] Calling getDocs...
 🔍 [BlogArticles] Number of docs: X
-✅ [BlogArticles] Articles loaded successfully!
+✅ [BlogArticles] Articles loaded successfully! nb
 ```
 
 או במקרה של שגיאה:
