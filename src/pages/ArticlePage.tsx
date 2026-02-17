@@ -15,6 +15,7 @@ import { Footer } from '@/components/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import { db } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
+import { ReadOnlyRichText } from '@/components/RichTextEditor';
 
 type ArticleStatus = 'draft' | 'published';
 
@@ -42,7 +43,13 @@ const ArticlePage = () => {
 
   useEffect(() => {
     const load = async () => {
-      if (!slug) return;
+      if (!slug) {
+        console.log('ArticlePage: No slug provided');
+        return;
+      }
+      
+      console.log('ArticlePage: Loading article with slug:', slug);
+      
       try {
         setIsLoading(true);
 
@@ -51,12 +58,23 @@ const ArticlePage = () => {
         const byIdSnap = await getDoc(byIdRef);
         if (byIdSnap.exists()) {
           const data = byIdSnap.data() as any;
+          console.log('ArticlePage: Found by ID:', data);
+          
+          // Check if published
+          if (data.status && data.status !== 'published') {
+            console.log('ArticlePage: Article is not published, status:', data.status);
+            setArticle(null);
+            return;
+          }
+          
           setArticle({
             id: byIdSnap.id,
             ...data,
           });
           return;
         }
+
+        console.log('ArticlePage: Not found by ID, trying by slug field');
 
         // Fallback: query by slug field
         const q = query(
@@ -67,11 +85,22 @@ const ArticlePage = () => {
         const snap = await getDocs(q);
         if (!snap.empty) {
           const docSnap = snap.docs[0];
+          const data = docSnap.data() as any;
+          console.log('ArticlePage: Found by slug field:', data);
+          
+          // Check if published
+          if (data.status && data.status !== 'published') {
+            console.log('ArticlePage: Article is not published, status:', data.status);
+            setArticle(null);
+            return;
+          }
+          
           setArticle({
             id: docSnap.id,
-            ...(docSnap.data() as any),
+            ...data,
           });
         } else {
+          console.log('ArticlePage: Article not found');
           setArticle(null);
         }
       } catch (error) {
@@ -123,11 +152,19 @@ const ArticlePage = () => {
           ) : !article ? (
             <div className="space-y-4">
               <h1 className="text-2xl font-semibold">
-                {isHebrew ? 'המאמר לא נמצא' : 'Article not found'}
+                {isHebrew ? 'המאמר לא נמצא או עדיין בטיוטה' : 'Article not found or still in draft'}
               </h1>
+              <p className="text-muted-foreground">
+                {isHebrew 
+                  ? 'המאמר שחיפשת אינו זמין. ייתכן שהוא עדיין בטיוטה או שהקישור שגוי.'
+                  : 'The article you are looking for is not available. It may still be a draft or the link is incorrect.'}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <strong>Slug:</strong> {slug}
+              </p>
               <Link
                 to="/#blog-articles"
-                className="text-sm text-gold hover:underline"
+                className="text-sm text-gold hover:underline inline-block"
               >
                 {isHebrew ? 'חזרה לרשימת המאמרים' : 'Back to articles'}
               </Link>
@@ -188,8 +225,9 @@ const ArticlePage = () => {
                   isHebrew && 'prose-rtl',
                 )}
                 dir={isHebrew ? 'rtl' : 'ltr'}
-                dangerouslySetInnerHTML={{ __html: bodyHtml }}
-              />
+              >
+                <ReadOnlyRichText value={bodyHtml} />
+              </motion.div>
 
               <div className="pt-8">
                 <Link

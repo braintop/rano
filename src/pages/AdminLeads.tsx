@@ -1345,6 +1345,8 @@ export const AdminLeads = () => {
                       setTopSection(item.id);
                       if (isLeads) {
                         navigate('/0522577194/admin');
+                      } else if (item.id === 'articles') {
+                        navigate('/0522577194/admin/articles');
                       }
                     }}
                     className={cn(
@@ -1354,7 +1356,7 @@ export const AdminLeads = () => {
                         : isDarkTheme
                         ? 'text-slate-200 hover:bg-slate-800'
                         : 'text-slate-700 hover:bg-slate-100',
-                      !isLeads && 'cursor-default',
+                      (!isLeads && item.id !== 'articles') && 'cursor-default',
                     )}
                   >
                     {isHebrew ? item.labelHe : item.labelEn}
