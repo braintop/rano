@@ -110,6 +110,15 @@ const ArticlePage = () => {
     article?.bodyEn ??
     '';
 
+  // Debug log for mobile
+  useEffect(() => {
+    if (article) {
+      console.log('ArticlePage: Article loaded, bodyHtml length:', bodyHtml?.length || 0);
+      console.log('ArticlePage: bodyHe:', article.bodyHe?.substring(0, 100));
+      console.log('ArticlePage: bodyEn:', article.bodyEn?.substring(0, 100));
+    }
+  }, [article, bodyHtml]);
+
   const created =
     article?.createdAt?.seconds != null
       ? new Date(article.createdAt.seconds * 1000)
@@ -225,7 +234,13 @@ const ArticlePage = () => {
                 )}
                 dir={isHebrew ? 'rtl' : 'ltr'}
               >
-                <ReadOnlyRichText value={bodyHtml} />
+                {bodyHtml ? (
+                  <ReadOnlyRichText value={bodyHtml} />
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    {isHebrew ? '[תוכן המאמר ריק או לא נטען]' : '[Article body is empty or not loaded]'}
+                  </p>
+                )}
               </motion.div>
 
               <div className="pt-8">
