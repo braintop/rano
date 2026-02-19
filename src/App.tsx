@@ -11,6 +11,7 @@ import AdminArticles from "./pages/AdminArticles";
 import NotFound from "./pages/NotFound";
 import ArticlePage from "./pages/ArticlePage";
 import DebugArticle from "./pages/DebugArticle";
+import MobileFloatingButtons from "./components/MobileFloatingButtons";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <MobileFloatingButtons />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
